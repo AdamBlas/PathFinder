@@ -5543,21 +5543,11 @@ MonoBehaviour:
       m_Image: {fileID: 0}
     - m_Text: Hillclimb
       m_Image: {fileID: 0}
+    - m_Text: JPS+
+      m_Image: {fileID: 0}
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1648066442}
-        m_TargetAssemblyTypeName: PathFinder, Assembly-CSharp
-        m_MethodName: DisplayDescription
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
       - m_Target: {fileID: 1648066442}
         m_TargetAssemblyTypeName: PathFinder, Assembly-CSharp
         m_MethodName: OnAlgorithmSet
@@ -7449,8 +7439,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d4f094e5c408418547837a1122e34, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  algorithm: {fileID: 1297812742}
-  heuristic: {fileID: 386739519}
+  algorithmDropdown: {fileID: 1297812742}
+  heuristicDropdown: {fileID: 386739519}
   delayInput: {fileID: 1135324828}
   delaySlider: {fileID: 387874712}
   solveButton: {fileID: 499049236}
@@ -8032,7 +8022,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: f8c86ffdc1e6443459796595805beba6, type: 3}
-    m_FontSize: 25
+    m_FontSize: 20
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 2

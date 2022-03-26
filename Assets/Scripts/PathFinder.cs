@@ -9,7 +9,7 @@ using System.Text;
 
 public class PathFinder : MonoBehaviour
 {
-    class Node: IComparable<Node>
+    public class Node: IComparable<Node>
     {
         public int x, y;
         public float value;
@@ -36,7 +36,7 @@ public class PathFinder : MonoBehaviour
             return 1;
         }
     }
-    class SortedList
+    public class SortedList
     {
         public int Count { get; private set; } = 0;
         readonly List<Node> sortedList = new List<Node>();
@@ -69,10 +69,10 @@ public class PathFinder : MonoBehaviour
         }
     }
 
-    static PathFinder instance;
+    public static PathFinder Instance { get; private set; }
 
-    public Dropdown algorithm;
-    public Dropdown heuristic;
+    public Dropdown algorithmDropdown;
+    public Dropdown heuristicDropdown;
     public InputField delayInput;
     public Slider delaySlider;
     public Button solveButton;
@@ -81,8 +81,8 @@ public class PathFinder : MonoBehaviour
     public Button nextStepButton;
     public bool Fast { get; set; }
 
-    float delay;
-    (int, int, float)[] directions =
+    public float Delay { get; private set; }
+    public static (int, int, float)[] Directions { get; private set; } =
     {
         ( 0,  1, 1f),
         ( 1,  0, 1),
@@ -93,14 +93,23 @@ public class PathFinder : MonoBehaviour
         (-1, -1, 1.41421f),
         (-1,  1, 1.41421f),
     };
-    Vector2Int start;
-    Vector2Int end;
-    bool isPaused = false;
+    public static Vector2Int StartCoordinate { get; private set; }
+    public static Vector2Int EndCoordinate { get; private set; }
+    public static bool IsPaused { get; private set; } = false;
 
+    readonly Heuristic[] heuristics = {
+        new Dijkstra(),
+        new InversedDijkstra(),
+        new Manhattan()
+    };
+    readonly Algorithm[] algorithms = {
+        new AStar(),
+        new Hillclimb()
+    };
 
     public void Awake()
     {
-        instance = this;
+        Instance = this;
     }
     public void Start()
     {
@@ -108,8 +117,10 @@ public class PathFinder : MonoBehaviour
         SetDelay();
         PlaySimulation();
 
-        delaySlider.value = 0.1f;
+        delaySlider.value = 0f;
         delayInput.text = delaySlider.value.ToString();
+
+        PopulateAlgorithmsDropdown();
     }
 
     public void SetDelayFromInput()
@@ -117,263 +128,72 @@ public class PathFinder : MonoBehaviour
         if (string.IsNullOrWhiteSpace(delayInput.text))
             return;
 
-        delay = float.Parse(delayInput.text);
-        delaySlider.value = delay;
+        Delay = float.Parse(delayInput.text);
+        delaySlider.value = Delay;
     }
     public void SetDelayFromSlider()
     {
-        delay = (float)Math.Round(delaySlider.value, 1);
-        delayInput.text = delay.ToString();
+        Delay = (float)Math.Round(delaySlider.value, 1);
+        delayInput.text = Delay.ToString();
     }
-
     public void SetDelay()
     {
         if (!string.IsNullOrWhiteSpace(delayInput.text))
-            delay = float.Parse(delayInput.text);
+            Delay = float.Parse(delayInput.text);
     }
 
-    // Node value calculations
-    delegate float Heuristic(Node sourceNode, int x, int y, float offset);
-    float Dijkstra(Node sourceNode, int x, int y, float offset)
+    void PopulateAlgorithmsDropdown()
     {
-        return sourceNode.value + offset;
+        algorithmDropdown.ClearOptions();
+        var options = new List<Dropdown.OptionData>();
+        foreach (var a in algorithms)
+            options.Add(new Dropdown.OptionData(a.Name));
+        algorithmDropdown.AddOptions(options);
     }
-    float InversedDijkstra(Node sourceNode, int x, int y, float offset)
+    public void OnAlgorithmSet()
     {
-        return Mathf.Pow(end.x - x, 2) + Mathf.Pow(end.y - y, 2);
+        UpdateHeuristicDropdown();
+        DisplayDescription();
+    }
+    public void OnHeuristicSet()
+    {
+        DisplayDescription();
+    }
+    public void UpdateHeuristicDropdown()
+    {
+        PopulateHeuristicsDropdown(algorithms[algorithmDropdown.value]);
+    }
+    void PopulateHeuristicsDropdown(Algorithm algorithm)
+    {
+        heuristicDropdown.ClearOptions();
+        var options = new List<Dropdown.OptionData>();
+        foreach (var h in algorithm.AvaliableHeuristics)
+            options.Add(new Dropdown.OptionData(h.Name));
+        heuristicDropdown.AddOptions(options);
     }
 
     public void Solve()
     {
-        start = Paint.StartCoordinates.Value;
-        end = Paint.EndCoordinates.Value;
+        StartCoordinate = Paint.StartCoordinates.Value;
+        EndCoordinate = Paint.EndCoordinates.Value;
 
-        string algorithm = this.algorithm.options[this.algorithm.value].text;
-        string heuristic = this.heuristic.options[this.heuristic.value].text;
+        Algorithm algorithm = algorithms[algorithmDropdown.value];
+        Heuristic heuristic = algorithm.AvaliableHeuristics[heuristicDropdown.value];
 
-        Heuristic h = heuristic switch
-        {
-            "Dijkstra" => Dijkstra,
-            "Inversed Dijkstra" => InversedDijkstra,
-            _ => throw new NotImplementedException(),
-        };
-
-        _ = algorithm switch
-        {
-            "A*" => StartCoroutine(AStar(h)),
-            "Hillclimb" => StartCoroutine(Hillclimb(h)),
-            _ => throw new NotImplementedException(),
-        };
+        StartCoroutine(algorithm.Solve(heuristic, StartCoordinate, EndCoordinate));
     }
-    IEnumerator AStar(Heuristic heuristic)
-    {
-        Node lastNode = null;
-        Node[,] nodes = new Node[Map.Width, Map.Height];
-        SortedList list = new SortedList();
+    
+    
 
-        for (int x = 0; x < Map.Width; x++)
-            for (int y = 0; y < Map.Height; y++)
-                nodes[x, y] = new Node(x, y, float.PositiveInfinity);
-
-        list.Add(nodes[start.x, start.y]);
-        nodes[start.x, start.y].previousNode = (-1, -1);
-        bool endFound = false;
-
-        while (list.Count != 0)
-        {
-            if (isPaused)
-            {
-                yield return null;
-                continue;
-            }
-
-            list.Sort();
-            Node node = list.GetAtZero();
-
-            if (node.x == end.x && node.y == end.y)
-                break;
-
-            list.RemoveAtZero();
-            foreach (var dir in directions)
-            {
-                int newX = node.x + dir.Item1;
-                if (newX < 0 || newX >= Map.Width)
-                    continue;
-
-                int newY = node.y + dir.Item2;
-                if (newY < 0 || newY >= Map.Height)
-                    continue;
-
-                Map.Node type = Map.RecentMap[newX, newY];
-                if (type == Map.Node.Free)
-                {
-                    Map.RecentMap[newX, newY] = Map.Node.ToSearch;
-                    float value = heuristic(node, node.x + dir.Item1, node.y + dir.Item2, dir.Item3);
-                    Node newNode = new Node(newX, newY, value, (node.x, node.y));
-                    list.Add(newNode);
-                    nodes[newX, newY] = newNode;
-                }
-                else if (type == Map.Node.End)
-                {
-                    lastNode = node;
-                    endFound = true;
-                    break;
-                }
-            }
-
-            if (!Fast)
-            {
-                Map.RecentMap[node.x, node.y] = Map.Node.Searched;
-                ImageDisplayer.RefreshPixel(node.x, node.y);
-                yield return new WaitForSeconds(delay);
-            }
-
-            if (endFound)
-            {
-                break;
-            }
-        }
-
-        PrintOutputData(lastNode, nodes);
-    }
-    IEnumerator Hillclimb(Heuristic heuristic)
-    {
-        Node lastNode = null;
-        Node[,] nodes = new Node[Map.Width, Map.Height];
-
-        for (int x = 0; x < Map.Width; x++)
-            for (int y = 0; y < Map.Height; y++)
-                nodes[x, y] = new Node(x, y, float.PositiveInfinity);
-
-        nodes[start.x, start.y].previousNode = (-1, -1);
-        bool endFound = false;
-
-        Node node = nodes[start.x, start.y];
-        while (true)
-        {
-            if (isPaused)
-            {
-                yield return null;
-                continue;
-            }
-
-            if (node.x == end.x && node.y == end.y)
-                break;
-
-            foreach (var dir in directions)
-            {
-                int newX = node.x + dir.Item1;
-                if (newX < 0 || newX >= Map.Width)
-                    continue;
-
-                int newY = node.y + dir.Item2;
-                if (newY < 0 || newY >= Map.Height)
-                    continue;
-
-                Map.Node type = Map.RecentMap[newX, newY];
-                if (type == Map.Node.Free)
-                {
-                    float value = heuristic(node, node.x + dir.Item1, node.y + dir.Item2, dir.Item3);
-                    if (value < node.value)
-                    {
-                        Node newNode = new Node(newX, newY, value, (node.x, node.y));
-                        nodes[newX, newY] = newNode;
-                        node = newNode;
-
-                        break;
-                    }
-                }
-                else if (type == Map.Node.End)
-                {
-                    lastNode = node;
-                    endFound = true;
-                    break;
-                }
-            }
-
-            if (!Fast)
-            {
-                Map.RecentMap[node.x, node.y] = Map.Node.Searched;
-                ImageDisplayer.RefreshPixel(node.x, node.y);
-                yield return new WaitForSeconds(delay);
-            }
-
-            if (endFound)
-            {
-                break;
-            }
-        }
-
-        PrintOutputData(lastNode, nodes);
-    }
-    void PrintOutputData(Node endNode, Node[,] map)
-    {
-        int searched = 0;
-        int path = 0;
-        int free = 0;
-
-        for  (int x = 0; x < Map.Width; x++)
-        {
-            for (int y = 0; y < Map.Height; y++)
-            {
-                switch(Map.RecentMap[x, y])
-                {
-                    case Map.Node.Free:
-                        free++;
-                        break;
-                    case Map.Node.Searched:
-                        searched++;
-                        break;
-                    case Map.Node.Path:
-                        path++;
-                        break;
-                }
-            }
-        }
-
-        if (path == 0)
-        {
-            OutputMessageManager.SetMessage("Path not found!");
-            return;
-        }
-
-        float length = 0;
-        Node node = endNode;
-        while (true)
-        {
-            int xDiff = node.x - node.previousNode.Item1;
-            int yDiff = node.y - node.previousNode.Item2;
-            length += Mathf.Sqrt(xDiff * xDiff + yDiff * yDiff);
-            node = map[node.previousNode.Item1, node.previousNode.Item2];
-
-            if (node.previousNode.Item1 == -1)
-                break;
-        }
-
-        OutputMessageManager.SetMessage(
-                "Path found!\n" +
-                "Length:\n" +
-                "Nodes in Path: \n" +
-                "Nodes Searched:",
-                column: 1);
-
-        OutputMessageManager.SetMessage(
-            "\n" +
-            length + "\n" +
-            path + "\n" +
-            searched,
-            column: 2);
-    }
-
-
+    // GUI
     public static void UpdateButtonState()
     {
         bool isActive = Map.RecentMap != null && Paint.StartCoordinates.HasValue && Paint.EndCoordinates.HasValue;
-        instance.solveButton.interactable = isActive;
+        Instance.solveButton.interactable = isActive;
     }
     public void PlaySimulation()
     {
-        isPaused = false;
+        IsPaused = false;
 
         playButton.interactable = false;
         pauseButton.interactable = true;
@@ -381,7 +201,7 @@ public class PathFinder : MonoBehaviour
     }
     public void PauseSimulation()
     {
-        isPaused = true;
+        IsPaused = true;
 
         playButton.interactable = true;
         pauseButton.interactable = false;
@@ -393,64 +213,22 @@ public class PathFinder : MonoBehaviour
     }
     IEnumerator NextStep()
     {
-        isPaused = false;
+        IsPaused = false;
         yield return null;
-        isPaused = true;
-    }
-
-    public void OnAlgorithmSet()
-    {
-        string algorithm = this.algorithm.options[this.algorithm.value].text;
-
-        switch (algorithm)
-        {
-            case "A*":
-                heuristic.interactable = true;
-                break;
-            case "Hillclimb":
-                heuristic.interactable = false;
-                heuristic.value = 1;
-                break;
-            default:
-                throw new NotImplementedException();
-        }
+        IsPaused = true;
     }
 
     public void DisplayDescription()
     {
         StringBuilder sb = new StringBuilder();
+        Algorithm algorithm = algorithms[algorithmDropdown.value];
+        Heuristic heuristic = algorithm.AvaliableHeuristics[heuristicDropdown.value];
 
         sb.AppendLine("ALGORITHM:");
-
-        switch (algorithm.options[algorithm.value].text)
-        {
-            case "A*":
-                sb.AppendLine("Examines nearby nodes. Assigns value to every node and picks the best one.");
-                sb.AppendLine("Node's value is determined by heuristic.");
-                break;
-            case "Hillclimb":
-                sb.AppendLine("Examines nearby nodes one by one. If it's value is better than current one, skip further examination and switch node.");
-                sb.AppendLine("Node's value is determined by heuristic.");
-                sb.AppendLine("There is rist of being stuck in local extremum.");
-                break;
-            default:
-                throw new NotImplementedException();
-        }
-
+        sb.AppendLine(algorithm.Description);
         sb.AppendLine();
         sb.AppendLine("HEURISTIC:");
-
-        switch (heuristic.options[heuristic.value].text)
-        {
-            case "Dijkstra":
-                sb.AppendLine("The best node is the one closest to the start node.");
-                break;
-            case "Inversed Dijkstra":
-                sb.AppendLine("The best node is the one closest to the end node.");
-                break;
-            default:
-                throw new NotImplementedException();
-        }
+        sb.AppendLine(heuristic.Description);
 
         OutputMessageManager.SetMessage(sb.ToString(), column: 3);
     }
