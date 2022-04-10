@@ -38,13 +38,13 @@ public class ImageLoader : MonoBehaviour
         if (extension == "map")
         {
             lastPath = path;
-            map = TextureFromMap(path);
+            map = MapFromFile(path);
         }
 
         ImageDisplayer.LoadImage(map);
     }
 
-    Map TextureFromMap(string path)
+    Map MapFromFile(string path)
     {
         string[] mapText = File.ReadAllLines(path);
 
@@ -53,11 +53,11 @@ public class ImageLoader : MonoBehaviour
 
         Map map = new Map(width, height);
 
-        for (int y = 0; y < height; y++)
+        for (int y = height - 1; y >= 0; y--)
         {
             for (int x = 0; x < width; x++)
             {
-                char symbol = mapText[y + 4][x];
+                char symbol = mapText[3 + height - y][x];
 
                 if (FreeNodeChars.IndexOf(symbol) >= 0)
                 {
@@ -79,7 +79,7 @@ public class ImageLoader : MonoBehaviour
     }
     public void ReloadMap()
     {
-        Map map = TextureFromMap(lastPath);
+        Map map = MapFromFile(lastPath);
 
         Vector2Int? startCoords = Paint.StartCoordinates;
         Vector2Int? endCoords = Paint.EndCoordinates;

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// Allows to put start and end markers on map
+/// </summary>
 public class StartEndMarker : MonoBehaviour
 {
     public Image startMarker;

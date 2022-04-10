@@ -104,7 +104,8 @@ public class PathFinder : MonoBehaviour
     };
     readonly Algorithm[] algorithms = {
         new AStar(),
-        new Hillclimb()
+        new Hillclimb(),
+        new JPS()
     };
 
     public void Awake()

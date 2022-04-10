@@ -31,7 +31,12 @@ public class Map
 
     public Node this[int x, int y]
     {
-        get => map[x, Height - 1 - y];
+        get
+        {
+            if (x < 0 || x >= map.GetLength(0) || Height - 1 - y < 0 || Height - 1 - y >= map.GetLength(1))
+                throw new System.IndexOutOfRangeException("x = " + x + ", y = " + y + ", Array X Size = " + map.GetLength(0) + ", Array Y Size = " + map.GetLength(1));
+            return map[x, Height - 1 - y];
+        }
         set => map[x, Height - 1 - y] = value;
     }
 
