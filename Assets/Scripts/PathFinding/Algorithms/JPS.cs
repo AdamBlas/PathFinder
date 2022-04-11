@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Text;
 using UnityEngine;
+using System.Diagnostics;
 using static PathFinder;
 
 public class JPS : Algorithm
@@ -39,7 +40,26 @@ public class JPS : Algorithm
     {
         yield return null;
 
-        DirectionBox[,] directions = new DirectionBox[Map.Width, Map.Height];
+        Stopwatch sw = new Stopwatch();
+        DirectionBox[,] directions = null;
+        DistanceBox[,] distances= null;
+
+        sw.Start();
+        PrecalcuateMap(ref directions, ref distances);
+        sw.Stop();
+        double precalculation = sw.Elapsed.TotalMilliseconds;
+
+
+        PrintMap(directions, distances);
+
+
+
+        OutputMessageManager.SetMessage("Precalculation: " + precalculation + " ms");
+    }
+
+    void PrecalcuateMap(ref DirectionBox[,] directions, ref DistanceBox[,] distances)
+    {
+        directions = new DirectionBox[Map.Width, Map.Height];
 
         for (int x = 0; x < Map.Width; x++)
         {
@@ -120,7 +140,7 @@ public class JPS : Algorithm
             }
         }
 
-        DistanceBox[,] distances = new DistanceBox[Map.Width, Map.Height];
+        distances = new DistanceBox[Map.Width, Map.Height];
         for (int x = 0; x < Map.Width; x++)
         {
             for (int y = 0; y < Map.Height; y++)
@@ -309,11 +329,7 @@ public class JPS : Algorithm
                 distances[x, y] = dist;
             }
         }
-
-        PrintMap(directions, distances);
-        Debug.Log("PRINTED");
     }
-
     void PrintMap(DirectionBox[,] directions, DistanceBox[,] map)
     {
         string[,] stringArray = new string[Map.Height * 4, Map.Width * 4];
