@@ -329,11 +329,11 @@ public class JPS : Algorithm
 
                 if (modX == 3)
                 {
-                    stringArray[y, x] = "====";
+                    stringArray[y, x] = " || ";
                 }
                 else if (modY == 3)
                 {
-                    stringArray[y, x] = "II\t";
+                    stringArray[y, x] = "====";
                 }
                 else
                 {
@@ -344,16 +344,16 @@ public class JPS : Algorithm
                         if (modX == 0)
                         {
                             if (modY == 0)
-                                stringArray[y, x] = map[mapX, mapY].NW.ToString() + "\t";
+                                stringArray[y, x] = map[mapX, mapY].SW.ToString() + "\t";
                             else if (modY == 1)
-                                stringArray[y, x] = map[mapX, mapY].N.ToString() + "\t";
+                                stringArray[y, x] = map[mapX, mapY].W.ToString() + "\t";
                             else
-                                stringArray[y, x] = map[mapX, mapY].NE.ToString() + "\t";
+                                stringArray[y, x] = map[mapX, mapY].NW.ToString() + "\t";
                         }
                         else if (modX == 1)
                         {
                             if (modY == 0)
-                                stringArray[y, x] = map[mapX, mapY].W.ToString() + "\t";
+                                stringArray[y, x] = map[mapX, mapY].S.ToString() + "\t";
                             else if (modY == 1)
                             {
                                 if (directions[mapX, mapY] == null)
@@ -362,16 +362,16 @@ public class JPS : Algorithm
                                     stringArray[y, x] = "FN\t";
                             }
                             else
-                                stringArray[y, x] = map[mapX, mapY].E.ToString() + "\t";
+                                stringArray[y, x] = map[mapX, mapY].N.ToString() + "\t";
                         }
                         else
                         {
                             if (modY == 0)
-                                stringArray[y, x] = map[mapX, mapY].SW.ToString() + "\t";
-                            else if (modY == 1)
-                                stringArray[y, x] = map[mapX, mapY].S.ToString() + "\t";
-                            else
                                 stringArray[y, x] = map[mapX, mapY].SE.ToString() + "\t";
+                            else if (modY == 1)
+                                stringArray[y, x] = map[mapX, mapY].E.ToString() + "\t";
+                            else
+                                stringArray[y, x] = map[mapX, mapY].NE.ToString() + "\t";
                         }
                     }
                 }
@@ -381,7 +381,7 @@ public class JPS : Algorithm
         StringBuilder content = new StringBuilder();
         for (int x = 0; x < Map.Height * 4; x++)
         {
-            for (int y = 0; y < Map.Width * 4; y++)
+            for (int y = (Map.Width * 4) - 1; y >= 0; y--)
             {
                 content.Append(stringArray[x, y]);
             }
