@@ -18,12 +18,14 @@ public class Map
     static Node[,] map;
     public static int Width { get; private set; }
     public static int Height { get; private set; }
+    public static int Size { get; private set; }
     public static Map RecentMap { get; private set; }
 
     public Map(int width, int height)
     {
         Width = width;
         Height = height;
+        Size = width * height;
         map = new Node[width, height];
 
         RecentMap = this;

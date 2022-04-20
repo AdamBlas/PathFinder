@@ -7,5 +7,5 @@ public abstract class Heuristic
     public string Name { get; protected set; }
     public string Description { get; protected set; }
 
-    public abstract float GetNodeValue(PathFinder.Node previousNode, int x, int y, float offset);
+    public abstract float GetNodeValue(Node previousNode, int x, int y, float offset);
 }

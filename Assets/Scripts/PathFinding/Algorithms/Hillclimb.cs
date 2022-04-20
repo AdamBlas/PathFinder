@@ -17,6 +17,9 @@ public class Hillclimb : Algorithm
 
     public override IEnumerator Solve(Heuristic heuristic, Vector2Int start, Vector2Int end)
     {
+        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+        sw.Start();
+
         Node lastNode = null;
         Node[,] nodes = new Node[Map.Width, Map.Height];
 
@@ -82,8 +85,9 @@ public class Hillclimb : Algorithm
                 break;
             }
         }
+        sw.Stop();
 
         CreatePath(lastNode, nodes);
-        PrintOutputData(lastNode, nodes);
+        PrintOutputData(lastNode, nodes, null, sw.ElapsedMilliseconds);
     }
 }
