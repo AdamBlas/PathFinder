@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using static PathFinder;
 
 public abstract class Algorithm
 {
@@ -9,6 +8,7 @@ public abstract class Algorithm
     public Heuristic[] AvaliableHeuristics { get; protected set; }
 
     public abstract IEnumerator Solve(Heuristic heuristic, Vector2Int start, Vector2Int end);
+
     // Output data
     public void CreatePath(Node endNode, Node[,] map)
     {
@@ -23,8 +23,16 @@ public abstract class Algorithm
             node = map[node.previousNode.Item1, node.previousNode.Item2];
         }
     }
-    public void PrintOutputData(Node endNode, Node[,] map)
+    public void PrintOutputData(Node endNode, Node[,] map, long? precalculation, long calulation)
     {
+        if (endNode == null)
+        {
+            OutputMessageManager.SetMessage("Path not found!", column: 1);
+            OutputMessageManager.SetMessage(string.Empty, column: 2);
+            return;
+        }
+
+
         int searched = 0;
         int path = 0;
         int free = 0;
@@ -68,14 +76,18 @@ public abstract class Algorithm
         }
 
         OutputMessageManager.SetMessage(
-                "Path found!\n" +
-                "Length:\n" +
-                "Nodes in Path: \n" +
-                "Nodes Searched:",
-                column: 1);
+            "Path found!\n" +
+            "Precalculatoin:\n" +
+            "Calculation:\n" + 
+            "Length:\n" +
+            "Nodes in Path: \n" +
+            "Nodes Searched:",
+            column: 1);
 
         OutputMessageManager.SetMessage(
             "\n" +
+            (precalculation.HasValue ? precalculation.ToString() : "None") + " ms\n" +
+            calulation + " ms\n" +
             length + "\n" +
             path + "\n" +
             searched,

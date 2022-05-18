@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using static PathFinder;
+using System.Diagnostics;
 
 public class AStar : Algorithm
 {
@@ -18,9 +19,12 @@ public class AStar : Algorithm
 
     public override IEnumerator Solve(Heuristic heuristic, Vector2Int start, Vector2Int end)
     {
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
+
         Node lastNode = null;
         Node[,] nodes = new Node[Map.Width, Map.Height];
-        PathFinder.SortedList list = new PathFinder.SortedList();
+        SortedList list = new SortedList();
 
         for (int x = 0; x < Map.Width; x++)
             for (int y = 0; y < Map.Height; y++)
@@ -79,7 +83,11 @@ public class AStar : Algorithm
                 ImageDisplayer.RefreshPixel(node.x, node.y);
 
                 if (counter++ % 10 == 0)
+                {
+                    sw.Stop();
                     yield return new WaitForSeconds(PathFinder.Instance.Delay);
+                    sw.Start();
+                }
             }
 
             if (endFound)
@@ -87,8 +95,10 @@ public class AStar : Algorithm
                 break;
             }
         }
+        sw.Stop();
+
 
         CreatePath(lastNode, nodes);
-        PrintOutputData(lastNode, nodes);
+        PrintOutputData(lastNode, nodes, null, sw.ElapsedMilliseconds);
     }
 }

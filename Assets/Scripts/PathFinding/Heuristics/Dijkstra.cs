@@ -1,5 +1,4 @@
-﻿using static PathFinder;
-
+﻿
 public class Dijkstra : Heuristic
 {
     public static Dijkstra Instance { get; private set; }

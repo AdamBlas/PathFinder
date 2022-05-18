@@ -1,4 +1,5 @@
-﻿using static PathFinder;
+﻿using System;
+using static PathFinder;
 
 public class Manhattan : Heuristic
 {
@@ -13,7 +14,8 @@ public class Manhattan : Heuristic
 
     public override float GetNodeValue(Node previousNode, int x, int y, float offset)
     {
-        offset = offset == 1 ? 1 : 2;
-        return previousNode.value + offset;
+        float xOffset = Math.Abs(previousNode.x - x);
+        float yOffset = Math.Abs(previousNode.y - y);
+        return previousNode.value + xOffset + yOffset;
     }
 }
