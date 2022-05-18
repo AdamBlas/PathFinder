@@ -178,6 +178,8 @@ public class PathFinder : MonoBehaviour
         StartCoordinate = Paint.StartCoordinates.Value;
         EndCoordinate = Paint.EndCoordinates.Value;
 
+        Map.RecentMap.ClearMap();
+
         Algorithm algorithm = algorithms[algorithmDropdown.value];
         Heuristic heuristic = algorithm.AvaliableHeuristics[heuristicDropdown.value];
 

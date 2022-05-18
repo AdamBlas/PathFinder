@@ -44,8 +44,8 @@ public class ImageDisplayer : MonoBehaviour
         if (!reload)
         {
             Paint.ResetCoords();
-            Paint.StartCoordinates = null;
-            Paint.EndCoordinates = null;
+            //Paint.StartCoordinates = null;
+            //Paint.EndCoordinates = null;
             PathFinder.UpdateButtonState();
         }
     }

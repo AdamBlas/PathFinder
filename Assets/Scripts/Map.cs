@@ -111,4 +111,22 @@ public class Map
         }
         map = newMap;
     }
+
+    public void ClearMap()
+    {
+        for (int i = 0; i < Width; i++)
+        {
+            for (int j = 0; j < Height; j++)
+            {
+                if (map[i, j] == Node.Searched ||
+                    map[i, j] == Node.Path ||
+                    map[i, j] == Node.ToSearch)
+                {
+                    map[i, j] = Node.Free;
+                }
+            }
+        }
+
+        ImageDisplayer.LoadImage(this, true);
+    }
 }
