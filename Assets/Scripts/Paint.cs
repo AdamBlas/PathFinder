@@ -254,4 +254,20 @@ public class Paint : MonoBehaviour
         coordinates = new Vector2Int((int)point.x, (int)point.y);
         return true;
     }
+    public static Vector2 PixelToWorldCoordinates(float x, float y)
+    {
+        return instance._PixelToWorldCoordinates(x, y);
+    }
+    Vector2 _PixelToWorldCoordinates(float x, float y)
+    {
+        Vector2 worldCoordinates = new Vector2();
+
+        worldCoordinates.x = x / Map.Width;
+        worldCoordinates.y = y / Map.Height;
+
+        worldCoordinates *= widthHeight;
+        worldCoordinates += topLeft;
+
+        return worldCoordinates;
+    }
 }

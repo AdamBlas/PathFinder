@@ -14,6 +14,20 @@ public class JPS : Algorithm
         public bool E = false;
         public bool S = false;
         public bool W = false;
+
+        public bool GetDirection(int x, int y)
+        {
+            if (x == 0 && y == 1)
+                return N;
+            if (x == 0 && y == -1)
+                return S;
+            if (x == 1 && y == 0)
+                return E;
+            if (x == -1 && y == 0)
+                return W;
+
+            throw new System.ArgumentException("Either x or y should be 1 or -1, other should be 0. Given args: x = " + x + ", y = " + y);
+        }
     }
     class DistanceBox
     {
@@ -25,9 +39,32 @@ public class JPS : Algorithm
         public int SW;
         public int W;
         public int NW;
+
+        public int GetDistance(int x, int y)
+        {
+            if (x == 0 && y == 1)
+                return N;
+            if (x == 1 && y == 1)
+                return NE;
+            if (x == 1 && y == 0)
+                return E;
+            if (x == 1 && y == -1)
+                return SE;
+            if (x == 0 && y == -1)
+                return S;
+            if (x == -1 && y == -1)
+                return SW;
+            if (x == -1 && y == 0)
+                return W;
+            if (x == -1 && y == 1)
+                return NW;
+
+            throw new System.ArgumentException("X and Y must be from range (-1, 1) and only one can be 0. Given args: X=" + x + ", Y=" + y);
+        }
     }
 
     Node lastNode;
+    bool[,] isJumpPoint;
 
     public JPS()
     {
@@ -46,7 +83,13 @@ public class JPS : Algorithm
 
         Stopwatch sw = new Stopwatch();
         DirectionBox[,] directions = null;
-        DistanceBox[,] distances= null;
+        DistanceBox[,] distances = null;
+
+        isJumpPoint = new bool[Map.Width, Map.Height];
+        for (int i = 0; i < Map.Width; i++)
+            for (int j = 0; j < Map.Height; j++)
+                isJumpPoint[i, j] = false;
+
 
         sw.Start();
         PrecalcuateMap(ref directions, ref distances);
@@ -62,7 +105,7 @@ public class JPS : Algorithm
         long precalculation = sw.ElapsedMilliseconds;
 
         sw.Start();
-        //Solve(distances, start, end, heuristic, ref nodes);
+        Solve(distances, start, end, heuristic, ref nodes);
         sw.Stop();
         long solving = sw.ElapsedMilliseconds;
 
@@ -70,6 +113,7 @@ public class JPS : Algorithm
 
         CreatePath(lastNode, nodes);
         PrintOutputData(lastNode, nodes, precalculation, solving);
+        //DrawLines(lastNode, nodes);
     }
 
     void PrecalcuateMap(ref DirectionBox[,] directions, ref DistanceBox[,] distances)
@@ -112,7 +156,10 @@ public class JPS : Algorithm
                     if (box.N == false && box.E == false && box.S == false && box.W == false)
                         directions[x, y] = null;
                     else
+                    {
                         directions[x, y] = box;
+                        isJumpPoint[x, y] = true;
+                    }
                 }
             }
         }
@@ -190,6 +237,7 @@ public class JPS : Algorithm
                  (dir.W && newX > x)))
             {
                 flag = Mathf.Abs(dx + dy) + 1;
+                isJumpPoint[x, y] = true;
                 break;
             }
 
@@ -212,22 +260,22 @@ public class JPS : Algorithm
                     dist = new DistanceBox();
 
                 // Toward positive X, positive Y
-                CheckForDiagonalJumpPoint(x, y, 1, 1, ref dist.NE, directions);
+                CheckForDiagonalJumpPoint(x, y, 1, 1, ref dist.NE, directions, distances);
 
                 // Toward negative X, positive Y
-                CheckForDiagonalJumpPoint(x, y, -1, 1, ref dist.NW, directions);
+                CheckForDiagonalJumpPoint(x, y, -1, 1, ref dist.NW, directions, distances);
 
                 // Toward negative X, negative Y
-                CheckForDiagonalJumpPoint(x, y, -1, -1, ref dist.SW, directions);
+                CheckForDiagonalJumpPoint(x, y, -1, -1, ref dist.SW, directions, distances);
 
                 // Toward positive X, negative Y
-                CheckForDiagonalJumpPoint(x, y, 1, -1, ref dist.SE, directions);
+                CheckForDiagonalJumpPoint(x, y, 1, -1, ref dist.SE, directions, distances);
 
                 distances[x, y] = dist;
             }
         }
     }
-    void CheckForDiagonalJumpPoint(int x, int y, int xOffset, int yOffset, ref int flag, DirectionBox[,] directions)
+    void CheckForDiagonalJumpPoint(int x, int y, int xOffset, int yOffset, ref int flag, DirectionBox[,] directions, DistanceBox[,] distances)
     {
         int dx = 0;
         int dy = 0;
@@ -253,15 +301,10 @@ public class JPS : Algorithm
                 break;
             }
 
-            DirectionBox dir = directions[newX + xOffset, newY + yOffset];
-            // If direction is not null and if dir box allows for movement in current direction
-            if (dir != null &&
-                ((dir.N && newY + yOffset > y) ||
-                 (dir.E && newX + xOffset > x) ||
-                 (dir.S && newY + yOffset < y) ||
-                 (dir.W && newX + xOffset < x)))
+            // If distance box is not null (we met jump point) and movement in that direction or cardinal directions is possible
+            DistanceBox dist = distances[newX + xOffset, newY + yOffset];
+            if (dist != null && (dist.GetDistance(xOffset, 0) > 0 || dist.GetDistance(0, yOffset) > 0))
             {
-                // Abs(dx) and Abs(dy) are identical, so it doesn't matter which value we use
                 flag = Mathf.Abs(dx) + 1;
                 break;
             }
@@ -300,16 +343,88 @@ public class JPS : Algorithm
 
             int xDiff = currentNode.x - end.x;
             int yDiff = currentNode.y - end.y;
-            if ((currentNode.y == end.y && (distanceBox.N <= end.y - currentNode.y || distanceBox.S <= currentNode.y - end.y)) ||
-                (currentNode.x == end.x && (distanceBox.W <= end.x - currentNode.x || distanceBox.E <= currentNode.x - end.x)) ||
-                (xDiff > 0 && xDiff == yDiff && Mathf.Abs(distanceBox.NE) >= xDiff) ||
-                (xDiff > 0 && xDiff == -yDiff && Mathf.Abs(distanceBox.NW) >= xDiff) ||
-                (xDiff < 0 && xDiff == yDiff && Mathf.Abs(distanceBox.SW) >= -xDiff) ||
-                (xDiff < 0 && xDiff == -yDiff && Mathf.Abs(distanceBox.SE) >= -xDiff))
+            int xDiffAbs = Mathf.Abs(xDiff);
+            int yDiffAbs = Mathf.Abs(yDiff);
+
+            // Check end node position
+            if (currentNode.y == end.y)
             {
-                // If there is straight path to the goal
-                pathFound = true;
-                break;
+                // We are in the same row as the end node
+                if (Mathf.Abs(distanceBox.E) >= xDiffAbs || Mathf.Abs(distanceBox.W) >= xDiffAbs)
+                {
+                    // Distance to the end is less than distance to the wall
+                    pathFound = true;
+                    break;
+                }
+            }
+            else if (currentNode.x == end.x)
+            {
+                // We are in the same column as the end node
+                if (Mathf.Abs(distanceBox.N) >= yDiffAbs || Mathf.Abs(distanceBox.S) >= yDiffAbs)
+                {
+                    // Distance to the end is less than distance to the wall
+                    pathFound = true;
+                    break;
+                }
+            }
+            else if (xDiffAbs == yDiffAbs)
+            {
+                // End node is in the diagonal direction
+
+                if (xDiff > 0)
+                {
+                    // End node is in the east
+
+                    if (yDiff > 0)
+                    {
+                        // End node is in the north-east
+
+                        if (Mathf.Abs(distanceBox.NE) >= xDiffAbs)
+                        {
+                            // There is no wall between end node and current position
+                            pathFound = true;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        // End node is in the south-east
+
+                        if (Mathf.Abs(distanceBox.SE) >= xDiffAbs)
+                        {
+                            // There is no wall between end node and current position
+                            pathFound = true;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    // End node is in the west
+
+                    if (yDiff > 0)
+                    {
+                        // End node is in the north-west
+
+                        if (Mathf.Abs(distanceBox.NW) >= xDiffAbs)
+                        {
+                            // There is no wall between end node and current position
+                            pathFound = true;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        // End node is in the south-west
+
+                        if (Mathf.Abs(distanceBox.SW) >= xDiffAbs)
+                        {
+                            // There is no wall between end node and current position
+                            pathFound = true;
+                            break;
+                        }
+                    }
+                }
             }
 
             float value;
@@ -327,6 +442,32 @@ public class JPS : Algorithm
                     list.Add(newNode);
                 }
             }
+            else
+            {
+                // Create target jump points
+                if (yDiffAbs <= Mathf.Abs(distanceBox.NE))
+                {
+                    value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x + yDiffAbs, currentNode.y + yDiffAbs, yDiffAbs);
+                    newNode = new Node(currentNode.x + yDiffAbs, currentNode.y + yDiffAbs, value, currNodeCoords);
+                    if (visitedNodes.Any(node => node.Item1 == newNode.x && node.Item2 == newNode.y) == false)
+                    {
+                        visitedNodes.Add((newNode.x, newNode.y));
+                        list.Add(newNode);
+                    }
+                }
+                if (yDiffAbs <= Mathf.Abs(distanceBox.NW))
+                {
+                    value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x - yDiffAbs, currentNode.y + yDiffAbs, yDiffAbs);
+                    newNode = new Node(currentNode.x - yDiffAbs, currentNode.y + yDiffAbs, value, currNodeCoords);
+                    if (visitedNodes.Any(node => node.Item1 == newNode.x && node.Item2 == newNode.y) == false)
+                    {
+                        visitedNodes.Add((newNode.x, newNode.y));
+                        list.Add(newNode);
+                    }
+                }
+            }
+
+
             if (distanceBox.NE > 0)
             {
                 value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x + distanceBox.NE, currentNode.y + distanceBox.NE, distanceBox.NE);
@@ -336,8 +477,10 @@ public class JPS : Algorithm
                 {
                     visitedNodes.Add((newNode.x, newNode.y));
                     list.Add(newNode);
-                }   
+                }
             }
+
+
             if (distanceBox.E > 0)
             {
                 value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x + distanceBox.E, currentNode.y, distanceBox.E);
@@ -349,6 +492,32 @@ public class JPS : Algorithm
                     list.Add(newNode);
                 }
             }
+            else
+            {
+                // Create target jump points
+                if (yDiffAbs <= Mathf.Abs(distanceBox.NE))
+                {
+                    value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x + yDiffAbs, currentNode.y + yDiffAbs, yDiffAbs);
+                    newNode = new Node(currentNode.x + yDiffAbs, currentNode.y + yDiffAbs, value, currNodeCoords);
+                    if (visitedNodes.Any(node => node.Item1 == newNode.x && node.Item2 == newNode.y) == false)
+                    {
+                        visitedNodes.Add((newNode.x, newNode.y));
+                        list.Add(newNode);
+                    }
+                }
+                if (yDiffAbs <= Mathf.Abs(distanceBox.SE))
+                {
+                    value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x + yDiffAbs, currentNode.y - yDiffAbs, yDiffAbs);
+                    newNode = new Node(currentNode.x + yDiffAbs, currentNode.y - yDiffAbs, value, currNodeCoords);
+                    if (visitedNodes.Any(node => node.Item1 == newNode.x && node.Item2 == newNode.y) == false)
+                    {
+                        visitedNodes.Add((newNode.x, newNode.y));
+                        list.Add(newNode);
+                    }
+                }
+            }
+
+
             if (distanceBox.SE > 0)
             {
                 value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x + distanceBox.SE, currentNode.y - distanceBox.SE, distanceBox.SE);
@@ -360,6 +529,8 @@ public class JPS : Algorithm
                     list.Add(newNode);
                 }
             }
+
+
             if (distanceBox.S > 0)
             {
                 value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x, currentNode.y - distanceBox.S, distanceBox.S);
@@ -371,6 +542,32 @@ public class JPS : Algorithm
                     list.Add(newNode);
                 }
             }
+            else
+            {
+                // Create target jump points
+                if (yDiffAbs <= Mathf.Abs(distanceBox.SE))
+                {
+                    value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x + yDiffAbs, currentNode.y - yDiffAbs, yDiffAbs);
+                    newNode = new Node(currentNode.x + yDiffAbs, currentNode.y - yDiffAbs, value, currNodeCoords);
+                    if (visitedNodes.Any(node => node.Item1 == newNode.x && node.Item2 == newNode.y) == false)
+                    {
+                        visitedNodes.Add((newNode.x, newNode.y));
+                        list.Add(newNode);
+                    }
+                }
+                if (yDiffAbs <= Mathf.Abs(distanceBox.SW))
+                {
+                    value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x - yDiffAbs, currentNode.y - yDiffAbs, yDiffAbs);
+                    newNode = new Node(currentNode.x - yDiffAbs, currentNode.y - yDiffAbs, value, currNodeCoords);
+                    if (visitedNodes.Any(node => node.Item1 == newNode.x && node.Item2 == newNode.y) == false)
+                    {
+                        visitedNodes.Add((newNode.x, newNode.y));
+                        list.Add(newNode);
+                    }
+                }
+            }
+
+
             if (distanceBox.SW > 0)
             {
                 value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x - distanceBox.SW, currentNode.y - distanceBox.SW, distanceBox.SW);
@@ -382,6 +579,8 @@ public class JPS : Algorithm
                     list.Add(newNode);
                 }
             }
+
+
             if (distanceBox.W > 0)
             {
                 value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x - distanceBox.E, currentNode.y, distanceBox.W);
@@ -393,6 +592,32 @@ public class JPS : Algorithm
                     list.Add(newNode);
                 }
             }
+            else
+            {
+                // Create target jump points
+                if (yDiffAbs <= Mathf.Abs(distanceBox.NW))
+                {
+                    value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x - yDiffAbs, currentNode.y + yDiffAbs, yDiffAbs);
+                    newNode = new Node(currentNode.x - yDiffAbs, currentNode.y + yDiffAbs, value, currNodeCoords);
+                    if (visitedNodes.Any(node => node.Item1 == newNode.x && node.Item2 == newNode.y) == false)
+                    {
+                        visitedNodes.Add((newNode.x, newNode.y));
+                        list.Add(newNode);
+                    }
+                }
+                if (yDiffAbs <= Mathf.Abs(distanceBox.SW))
+                {
+                    value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x - yDiffAbs, currentNode.y - yDiffAbs, yDiffAbs);
+                    newNode = new Node(currentNode.x - yDiffAbs, currentNode.y - yDiffAbs, value, currNodeCoords);
+                    if (visitedNodes.Any(node => node.Item1 == newNode.x && node.Item2 == newNode.y) == false)
+                    {
+                        visitedNodes.Add((newNode.x, newNode.y));
+                        list.Add(newNode);
+                    }
+                }
+            }
+
+
             if (distanceBox.NW > 0)
             {
                 value = currentNode.value + heuristic.GetNodeValue(currentNode, currentNode.x - distanceBox.NW, currentNode.y + distanceBox.NW, distanceBox.NW);
@@ -411,6 +636,7 @@ public class JPS : Algorithm
             lastNode = currentNode;
         }
     }
+
     /// <summary>
     /// Saves Map to .txt file
     /// </summary>
@@ -456,10 +682,10 @@ public class JPS : Algorithm
                                 stringArray[y, x] = map[mapX, mapY].S.ToString() + "\t";
                             else if (modY == 1)
                             {
-                                if (directions[mapX, mapY] == null)
-                                    stringArray[y, x] = " \t";
+                                if (isJumpPoint[mapX, mapY])
+                                    stringArray[y, x] = "JP\t";
                                 else
-                                    stringArray[y, x] = "FN\t";
+                                    stringArray[y, x] = " \t";
                             }
                             else
                                 stringArray[y, x] = map[mapX, mapY].N.ToString() + "\t";
@@ -479,9 +705,9 @@ public class JPS : Algorithm
         }
 
         StringBuilder content = new StringBuilder();
-        for (int x = 0; x < Map.Height * 4; x++)
+        for (int x = (Map.Height * 4) - 1; x >= 0; x--)
         {
-            for (int y = (Map.Width * 4) - 1; y >= 0; y--)
+            for (int y = 0; y < Map.Width * 4; y++)
             {
                 content.Append(stringArray[x, y]);
             }
