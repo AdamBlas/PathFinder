@@ -332,6 +332,10 @@ public class JPS : Algorithm
             list.Sort();
             currentNode = list.GetAtZero();
             nodes[currentNode.x, currentNode.y] = currentNode;
+
+            if (i != 0)
+                ImageDisplayer.SetPixel(currentNode.x, currentNode.y, Map.Node.Searched);
+            
             list.RemoveAtZero();
 
             if (currentNode.x == end.x && currentNode.y == end.y)
