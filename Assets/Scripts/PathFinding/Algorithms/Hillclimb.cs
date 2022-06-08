@@ -9,7 +9,7 @@ public class Hillclimb : Algorithm
         Name = "Hillclimb";
         Description = "Checks neighbours and moves if found any node with better value. " +
                       "There is risk of getting stuck in local extremum.";
-        AvaliableHeuristics = new Heuristic[]
+        AvailableHeuristics = new Heuristic[]
         {
             InversedDijkstra.Instance,
         };

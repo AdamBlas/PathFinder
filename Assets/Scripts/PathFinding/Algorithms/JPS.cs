@@ -70,7 +70,7 @@ public class JPS : Algorithm
     {
         Name = "JPS";
         Description = "Jump Point Search - precalculates corner points and uses them as nodes. Comparing to A*, skips all nodes between two points if there is nothing between them.";
-        AvaliableHeuristics = new Heuristic[]
+        AvailableHeuristics = new Heuristic[]
         {
             Dijkstra.Instance,
             InversedDijkstra.Instance,

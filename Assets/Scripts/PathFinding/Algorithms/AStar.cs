@@ -9,7 +9,7 @@ public class AStar : Algorithm
     {
         Name = "A*";
         Description = "Calculates values of all neighbours and adds them to the ordered queue.";
-        AvaliableHeuristics = new Heuristic[]
+        AvailableHeuristics = new Heuristic[]
         {
             Dijkstra.Instance,
             InversedDijkstra.Instance,

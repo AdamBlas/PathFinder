@@ -6,7 +6,7 @@ public abstract class Algorithm
 {
     public string Name { get; protected set; }
     public string Description { get; protected set; }
-    public Heuristic[] AvaliableHeuristics { get; protected set; }
+    public Heuristic[] AvailableHeuristics { get; protected set; }
     GameObject pathLinesRenderObject;
 
     public abstract IEnumerator Solve(Heuristic heuristic, Vector2Int start, Vector2Int end);

@@ -45,7 +45,8 @@ public class PathFinder : MonoBehaviour
     readonly Algorithm[] algorithms = {
         new AStar(),
         new Hillclimb(),
-        new JPS()
+        new JPS(),
+        new HPAStar()
     };
 
     public void Awake()
@@ -108,7 +109,7 @@ public class PathFinder : MonoBehaviour
     {
         heuristicDropdown.ClearOptions();
         var options = new List<Dropdown.OptionData>();
-        foreach (var h in algorithm.AvaliableHeuristics)
+        foreach (var h in algorithm.AvailableHeuristics)
             options.Add(new Dropdown.OptionData(h.Name));
         heuristicDropdown.AddOptions(options);
     }
@@ -121,7 +122,7 @@ public class PathFinder : MonoBehaviour
         Map.RecentMap.ClearMap();
 
         Algorithm algorithm = algorithms[algorithmDropdown.value];
-        Heuristic heuristic = algorithm.AvaliableHeuristics[heuristicDropdown.value];
+        Heuristic heuristic = algorithm.AvailableHeuristics[heuristicDropdown.value];
 
         StartCoroutine(algorithm.Solve(heuristic, StartCoordinate, EndCoordinate));
     }
@@ -165,7 +166,7 @@ public class PathFinder : MonoBehaviour
     {
         StringBuilder sb = new StringBuilder();
         Algorithm algorithm = algorithms[algorithmDropdown.value];
-        Heuristic heuristic = algorithm.AvaliableHeuristics[heuristicDropdown.value];
+        Heuristic heuristic = algorithm.AvailableHeuristics[heuristicDropdown.value];
 
         sb.AppendLine("ALGORITHM:");
         sb.AppendLine(algorithm.Description);
