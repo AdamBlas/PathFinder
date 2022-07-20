@@ -46,6 +46,11 @@ public class ImageLoader : MonoBehaviour
 
     Map MapFromFile(string path)
     {
+        // Save data to PNG exporter
+        string[] directories = path.Split(Path.DirectorySeparatorChar);
+        SaveMapToImgFile.gameName = directories[directories.Length - 2];
+        SaveMapToImgFile.mapName = directories[directories.Length - 1].Substring(directories[directories.Length - 1].LastIndexOf('.'));
+
         string[] mapText = File.ReadAllLines(path);
 
         int height = int.Parse(mapText[1].Split(' ')[1]);

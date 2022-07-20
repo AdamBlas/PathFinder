@@ -27,7 +27,7 @@ public class Hillclimb : Algorithm
             for (int y = 0; y < Map.Height; y++)
                 nodes[x, y] = new Node(x, y, float.PositiveInfinity);
 
-        nodes[StartCoordinate.x, StartCoordinate.y].previousNode = (-1, -1);
+        nodes[StartCoordinate.x, StartCoordinate.y].previousNodeCoords = (-1, -1);
         bool endFound = false;
 
         Node node = nodes[StartCoordinate.x, StartCoordinate.y];

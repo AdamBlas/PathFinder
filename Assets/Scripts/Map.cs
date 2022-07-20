@@ -15,7 +15,7 @@ public class Map
         Path,
     }
 
-    static Node[,] map;
+    public static Node[,] map { get; private set; }
     public static int Width { get; private set; }
     public static int Height { get; private set; }
     public static int Size { get; private set; }

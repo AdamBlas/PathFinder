@@ -1,22 +1,29 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 public class Node : IComparable<Node>
 {
     public int x, y;
     public float value;
-    public (int, int) previousNode;
+    public Node previousNode = null;
+    public (int, int) previousNodeCoords;
 
     public Node(int x, int y, float value)
     {
         this.x = x;
         this.y = y;
         this.value = value;
-        previousNode = (-1, -1);
+        previousNode = null;
+        previousNodeCoords = (-1, -1);
     }
-    public Node(int x, int y, float value, (int, int) previousNode) : this(x, y, value)
+    public Node(int x, int y, float value, (int, int) previousNodeCoords) : this(x, y, value)
+    {
+        this.x = x;
+        this.y = y;
+        this.value = value;
+        this.previousNodeCoords = previousNodeCoords;
+    }
+    public Node(int x, int y, float value, Node previousNode) : this(x, y, value)
     {
         this.x = x;
         this.y = y;

@@ -31,7 +31,7 @@ public class AStar : Algorithm
                 nodes[x, y] = new Node(x, y, float.PositiveInfinity);
 
         list.Add(nodes[start.x, start.y]);
-        nodes[start.x, start.y].previousNode = (-1, -1);
+        nodes[start.x, start.y].previousNodeCoords = (-1, -1);
         bool endFound = false;
         int counter = 0;
 

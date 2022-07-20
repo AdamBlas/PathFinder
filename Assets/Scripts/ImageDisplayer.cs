@@ -14,6 +14,8 @@ public class ImageDisplayer : MonoBehaviour
     public Color toSearchColor;
     public Color searchedColor;
     public Color pathColor;
+    public Color subPathColor1;
+    public Color subPathColor2;
     public Text mapDetails;
     public Toggle optimizeMapToggle;
 
@@ -127,7 +129,11 @@ public class ImageDisplayer : MonoBehaviour
 
         UpdateImage();
     }
-    void UpdateImage()
+    public static void SetPixel(int x, int y, Color color)
+    {
+        Instance.texture.SetPixel(x, y, color);
+    }
+    public void UpdateImage()
     {
         texture.Apply();
         Rect rect = new Rect(0, 0, Map.Width, Map.Height);

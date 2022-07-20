@@ -18,11 +18,11 @@ public abstract class Algorithm
             return;
 
         Node node = endNode;
-        while (node.previousNode.Item1 != -1)
+        while (node.previousNodeCoords.Item1 != -1)
         {
             Map.RecentMap[node.x, node.y] = Map.Node.Path;
             ImageDisplayer.RefreshPixel(node.x, node.y);
-            node = map[node.previousNode.Item1, node.previousNode.Item2];
+            node = map[node.previousNodeCoords.Item1, node.previousNodeCoords.Item2];
         }
     }
     public void PrintOutputData(Node endNode, Node[,] map, long? precalculation, long calulation)
@@ -67,12 +67,12 @@ public abstract class Algorithm
         Node node = endNode;
         while (true)
         {
-            int xDiff = node.x - node.previousNode.Item1;
-            int yDiff = node.y - node.previousNode.Item2;
+            int xDiff = node.x - node.previousNodeCoords.Item1;
+            int yDiff = node.y - node.previousNodeCoords.Item2;
             length += Mathf.Sqrt(xDiff * xDiff + yDiff * yDiff);
-            node = map[node.previousNode.Item1, node.previousNode.Item2];
+            node = map[node.previousNodeCoords.Item1, node.previousNodeCoords.Item2];
 
-            if (node.previousNode.Item1 == -1)
+            if (node.previousNodeCoords.Item1 == -1)
                 break;
         }
 
@@ -108,9 +108,9 @@ public abstract class Algorithm
             Vector3 point = Paint.PixelToWorldCoordinates(endNode.x, endNode.y);
             point.z = 1;
             points.Add(point);
-            endNode = map[endNode.previousNode.Item1, endNode.previousNode.Item2];
+            endNode = map[endNode.previousNodeCoords.Item1, endNode.previousNodeCoords.Item2];
 
-            if (endNode.previousNode.Item1 == -1)
+            if (endNode.previousNodeCoords.Item1 == -1)
                 break;
         }
 
