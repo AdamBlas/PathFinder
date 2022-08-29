@@ -20,8 +20,23 @@ public abstract class Algorithm
         Node node = endNode;
         while (node.previousNodeCoords.Item1 != -1)
         {
-            Map.RecentMap[node.x, node.y] = Map.Node.Path;
-            ImageDisplayer.RefreshPixel(node.x, node.y);
+            // Mark nodes between current node and previous one as path
+            Node prev = map[node.previousNodeCoords.Item1, node.previousNodeCoords.Item2];
+            int xOffset = prev.x - node.x;
+            int yOffset = prev.y - node.y;
+            int xNormalized = xOffset != 0 ? xOffset / Mathf.Abs(xOffset) : 0;
+            int yNormalized = yOffset != 0 ? yOffset / Mathf.Abs(yOffset) : 0;
+
+            int x = node.x;
+            int y = node.y;
+            while (x != prev.x || y != prev.y)
+            {
+                Map.RecentMap[x, y] = Map.Node.Path;
+                ImageDisplayer.RefreshPixel(x, y);
+                x += xNormalized;
+                y += yNormalized;
+            }
+
             node = map[node.previousNodeCoords.Item1, node.previousNodeCoords.Item2];
         }
     }

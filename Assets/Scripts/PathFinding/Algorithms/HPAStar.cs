@@ -8,7 +8,7 @@ using System.Linq;
 
 public class HPAStar : Algorithm
 {
-    int chunkSize = 4;
+    int chunkSize;
 
     class Chunk
     {
@@ -40,6 +40,10 @@ public class HPAStar : Algorithm
 
     public override IEnumerator Solve(Heuristic heuristic, Vector2Int start, Vector2Int end)
     {
+        // Get chunk size from GUI
+        if (!int.TryParse(PathFinder.Instance.hpaStarChunkSize.text, out chunkSize))
+            chunkSize = 4;
+
         Chunk[,] chunkMap = CreateChunkMap();
         Debug.Log("Created chunk map");
 
@@ -68,10 +72,9 @@ public class HPAStar : Algorithm
                 {
                     int mapY = chunk.y * chunkSize;
                     
-                    if (Map.RecentMap[mapX + x, mapY + y] == Map.Node.Free)
+                    if (mapX + x < Map.Width && mapY + y < Map.Height &&
+                        Map.RecentMap[mapX + x, mapY + y] == Map.Node.Free)
                     {
-                        Debug.Log("X=" + mapX + ", Y=" + mapY + ", CONDITION=" + (mapX % 2 == mapY % 2));
-
                         if (mapX % (chunkSize * 2) == mapY % (chunkSize * 2))
                             ImageDisplayer.SetPixel(mapX + x, mapY + y, ImageDisplayer.Instance.subPathColor1);
                         else
@@ -80,7 +83,6 @@ public class HPAStar : Algorithm
                 }
             }
 
-            Debug.Log("CHUNK: " + chunk.x + " | " + chunk.y);
             chunk = chunk.previousNode;
         }
 
@@ -122,8 +124,8 @@ public class HPAStar : Algorithm
 
     Chunk[,] CreateChunkMap()
     {
-        int width = Mathf.CeilToInt((float)Map.Width / 4);
-        int height = Mathf.CeilToInt((float)Map.Height / 4);
+        int width = Mathf.CeilToInt((float)Map.Width / chunkSize);
+        int height = Mathf.CeilToInt((float)Map.Height / chunkSize);
 
         Chunk[,] chunkMap = new Chunk[width, height];
         for (int x = 0; x < width; x++)
@@ -132,8 +134,8 @@ public class HPAStar : Algorithm
             {
                 chunkMap[x, y] = new Chunk
                 {
-                    x = x * 4,
-                    y = y * 4
+                    x = x * chunkSize,
+                    y = y * chunkSize
                 };
             }
         }
@@ -148,8 +150,11 @@ public class HPAStar : Algorithm
             for (int y = 0; y < chunks.GetLength(1); y++)
             {
                 // Bottom left node coords
-                int mapX = x * 4;
-                int mapY = y * 4;
+                int mapX = x * chunkSize;
+                int mapY = y * chunkSize;
+
+                if (mapY > Map.Height)
+                    break;
 
                 // If chunk direction wasn't set yet
                 if (!chunks[x, y].canGoDown.HasValue)
@@ -199,7 +204,8 @@ public class HPAStar : Algorithm
                             if (mapX + xx >= Map.Width)
                                 break;
 
-                            if (Map.RecentMap[mapX + xx, mapY + chunkSize - 1] == Map.Node.Free &&
+                            if (mapY + chunkSize < Map.Height &&
+                                Map.RecentMap[mapX + xx, mapY + chunkSize - 1] == Map.Node.Free &&
                                 Map.RecentMap[mapX + xx, mapY + chunkSize] == Map.Node.Free)
                             {
                                 chunks[x, y].canGoUp = true;
@@ -221,7 +227,8 @@ public class HPAStar : Algorithm
                             if (mapY + yy >= Map.Height)
                                 break;
 
-                            if (Map.RecentMap[mapX + chunkSize - 1, mapY + yy] == Map.Node.Free &&
+                            if (mapX + chunkSize < Map.Width &&
+                                Map.RecentMap[mapX + chunkSize - 1, mapY + yy] == Map.Node.Free &&
                                 Map.RecentMap[mapX + chunkSize, mapY + yy] == Map.Node.Free)
                             {
                                 chunks[x, y].canGoRight = true;
@@ -265,7 +272,9 @@ public class HPAStar : Algorithm
                     {
                         chunks[x + 1, y + 1].canGoDownLeft = false;
 
-                        if (Map.RecentMap[mapX + chunkSize - 1,     mapY + chunkSize - 1]   == Map.Node.Free &&
+                        if (mapX + chunkSize < Map.Width &&
+                            mapY + chunkSize < Map.Height &&
+                            Map.RecentMap[mapX + chunkSize - 1,     mapY + chunkSize - 1]   == Map.Node.Free &&
                             Map.RecentMap[mapX + chunkSize,         mapY + chunkSize - 1]   == Map.Node.Free && 
                             Map.RecentMap[mapX + chunkSize - 1,     mapY + chunkSize]       == Map.Node.Free &&
                             Map.RecentMap[mapX + chunkSize,         mapY + chunkSize]       == Map.Node.Free)
@@ -284,7 +293,8 @@ public class HPAStar : Algorithm
                     {
                         chunks[x - 1, y + 1].canGoDownLeft = false;
 
-                        if (Map.RecentMap[mapX,         mapY + chunkSize - 1]   == Map.Node.Free &&
+                        if (mapY + chunkSize < Map.Width &&
+                            Map.RecentMap[mapX,         mapY + chunkSize - 1]   == Map.Node.Free &&
                             Map.RecentMap[mapX - 1,     mapY + chunkSize - 1]   == Map.Node.Free &&
                             Map.RecentMap[mapX,         mapY + chunkSize]       == Map.Node.Free &&
                             Map.RecentMap[mapX - 1,     mapY + chunkSize]       == Map.Node.Free)
@@ -303,7 +313,8 @@ public class HPAStar : Algorithm
                     {
                         chunks[x + 1, y - 1].canGoUpLeft = false;
 
-                        if (Map.RecentMap[mapX + chunkSize - 1,     mapY]       == Map.Node.Free &&
+                        if (mapX + chunkSize < Map.Width &&
+                            Map.RecentMap[mapX + chunkSize - 1,     mapY]       == Map.Node.Free &&
                             Map.RecentMap[mapX + chunkSize,         mapY]       == Map.Node.Free &&
                             Map.RecentMap[mapX + chunkSize - 1,     mapY - 1]   == Map.Node.Free &&
                             Map.RecentMap[mapX + chunkSize,         mapY - 1]   == Map.Node.Free)
@@ -340,8 +351,8 @@ public class HPAStar : Algorithm
         // Returns last node in a path
 
         // Convert full map coords to chunk map coords
-        start /= 4;
-        end /= 4;
+        start /= chunkSize;
+        end /= chunkSize;
 
         // Create list and init it with starting chunk
         // float startNodeValue = heuristic.GetNodeValue(null, start.x, start.y, 0);
@@ -353,8 +364,6 @@ public class HPAStar : Algorithm
         {
             list.Sort();
             Node node = list.GetAtZero();
-
-            Debug.Log("RUNTIME LOG: ANALYZING x=" + node.x + ", y=" + node.y);
 
             if (node.x == end.x && node.y == end.y)
                 return node;
@@ -646,18 +655,18 @@ public class HPAStar : Algorithm
     }
     void PrintChunkMap(Chunk[,] map)
     {
-        string[,] stringArray = new string[map.GetLength(0) * 6, map.GetLength(1) * 6];
+        string[,] stringArray = new string[map.GetLength(0) * (chunkSize + 2), map.GetLength(1) * (chunkSize + 2)];
     
         for (int x = 0; x < map.GetLength(0); x++)
         {
             for (int y = 0; y < map.GetLength(1); y++)
             {
-                int stringX = x * 6;
-                int stringY = y * 6;
+                int stringX = x * chunkSize + 2;
+                int stringY = y * chunkSize + 2;
 
-                for (int xx = 0; xx < 4; xx++)
+                for (int xx = 0; xx < chunkSize; xx++)
                 {
-                    for (int yy = 0; yy < 4; yy++)
+                    for (int yy = 0; yy < chunkSize; yy++)
                     {
                         if (x * chunkSize + xx >= Map.Width ||
                             y * chunkSize + yy >= Map.Height)
@@ -669,29 +678,29 @@ public class HPAStar : Algorithm
 
                 
                 if (map[x, y].canGoUp.Value)
-                    for (int xx = 1; xx < 5; xx++)
-                        stringArray[stringX + xx, stringY + 5] = "^";
+                    for (int xx = 1; xx < chunkSize + 1; xx++)
+                        stringArray[stringX + xx, stringY + chunkSize + 1] = "^";
                 
                 if (map[x, y].canGoDown.Value)
-                    for (int xx = 1; xx < 5; xx++)
+                    for (int xx = 1; xx < chunkSize + 1; xx++)
                         stringArray[stringX + xx, stringY] = "v";
 
                 if (map[x, y].canGoLeft.Value)
-                    for (int yy = 1; yy < 5; yy++)
+                    for (int yy = 1; yy < chunkSize + 1; yy++)
                         stringArray[stringX, stringY + yy] = "<";
 
                 if (map[x, y].canGoRight.Value)
-                    for (int yy = 1; yy < 5; yy++)
-                        stringArray[stringX + 5, stringY + yy] = ">";
+                    for (int yy = 1; yy < chunkSize + 1; yy++)
+                        stringArray[stringX + chunkSize + 1, stringY + yy] = ">";
 
                 if (map[x, y].canGoUpRight.Value)
-                    stringArray[stringX + 5, stringY + 5] = "/";
+                    stringArray[stringX + chunkSize + 1, stringY + chunkSize + 1] = "/";
 
                 if (map[x, y].canGoUpLeft.Value)
-                    stringArray[stringX, stringY + 5] = "\\";
+                    stringArray[stringX, stringY + chunkSize + 1] = "\\";
 
                 if (map[x, y].canGoDownRight.Value)
-                    stringArray[stringX + 5, stringY] = "\\";
+                    stringArray[stringX + chunkSize + 1, stringY] = "\\";
 
                 if (map[x, y].canGoDownLeft.Value)
                     stringArray[stringX, stringY] = "/";
@@ -708,11 +717,11 @@ public class HPAStar : Algorithm
         {
             for (int x = 0; x < stringArray.GetLength(0); x++)
             {
-                if (x % 6 == 0)
+                if (x % chunkSize + 2 == 0)
                     content.Append("  ");
                 content.Append(stringArray[x, y]);
             }
-            if (y % 6 == 0)
+            if (y % chunkSize + 2 == 0)
                 content.Append("\n\n");
             content.AppendLine();
         }

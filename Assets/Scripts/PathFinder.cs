@@ -19,6 +19,8 @@ public class PathFinder : MonoBehaviour
     public Button playButton;
     public Button pauseButton;
     public Button nextStepButton;
+    public InputField goalBoundingStrength;
+    public InputField hpaStarChunkSize;
     public bool Fast { get; set; }
 
     public float Delay { get; private set; }

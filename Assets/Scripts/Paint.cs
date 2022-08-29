@@ -25,6 +25,8 @@ public class Paint : MonoBehaviour
         {
             if (value == null)
             {
+                Debug.LogWarning("START POINT SET TO NULL");
+
                 StartEndMarker.DisableStartMarker();
 
                 instance.startLabel.text = "Start point\nnot set";
@@ -98,7 +100,7 @@ public class Paint : MonoBehaviour
         {
             Map.Node brush = (Map.Node)this.brush;
 
-            bool insideImage = GetPixelCoordinates(out Vector2Int coordinates);
+            bool insideImage = GetPixelCoordinates_v2(out Vector2Int coordinates);
             bool clicked = Input.GetMouseButton(0);
 
             if (!insideImage)
@@ -183,13 +185,13 @@ public class Paint : MonoBehaviour
         instance.widthHeight = new Vector2(width, height);
 
         instance.lastCoordinates = null;
-        instance._startCoordinates = null;
-        instance._endCoordinates = null;
+        //instance._startCoordinates = null;
+        //instance._endCoordinates = null;
     }
     public static void ResetCoords()
     {
-        instance._startCoordinates = null;
-        instance._endCoordinates = null;
+        StartCoordinates = null;
+        EndCoordinates = null;
     }
 
     public void AddStartPoint()
@@ -225,6 +227,7 @@ public class Paint : MonoBehaviour
         brush = null;
     }
 
+    /*
     bool GetPixelCoordinates(out Vector2Int coordinates)
     {
         if (ImageDisplayer.Map == null)
@@ -269,5 +272,68 @@ public class Paint : MonoBehaviour
         worldCoordinates += topLeft;
 
         return worldCoordinates;
+    }
+    */
+
+    bool GetPixelCoordinates_v2(out Vector2Int coordinates)
+    {
+        // Check if map is set
+        if (ImageDisplayer.Map == null)
+        {
+            coordinates = -Vector2Int.one;
+            return false;
+        }
+
+        // Get image corners
+        Vector3[] corners = new Vector3[4];
+        ImageDisplayer.Instance.image.rectTransform.GetWorldCorners(corners);
+
+        float top = Mathf.Max(corners[0].y, corners[1].y, corners[2].y, corners[3].y);
+        float bottom = Mathf.Min(corners[0].y, corners[1].y, corners[2].y, corners[3].y);
+        float right = Mathf.Max(corners[0].x, corners[1].x, corners[2].x, corners[3].x);
+        float left = Mathf.Min(corners[0].x, corners[1].x, corners[2].x, corners[3].x);
+
+        // Get mouse coordinates
+        Vector3 mouseCoords = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+        // Check if mouse is inside displayer
+        if (mouseCoords.x < left ||
+            mouseCoords.x > right ||
+            mouseCoords.y < bottom ||
+            mouseCoords.y > top)
+        {
+            coordinates = -Vector2Int.one;
+            return false;
+        }
+
+        // Calculate pixel coords
+        int xPixel = Mathf.FloorToInt(Map.Width * (mouseCoords.x - left) / (right - left));
+        int yPixel = Mathf.FloorToInt(Map.Height * (mouseCoords.y - bottom) / (top - bottom));
+
+        coordinates = new Vector2Int(xPixel, yPixel);
+        return true;
+    }
+    public static Vector2 PixelToWorldCoordinates(float x, float y)
+    {
+        return instance._PixelToWorldCoordinates(x, y);
+    }
+    Vector2 _PixelToWorldCoordinates(float x, float y)
+    {
+        Vector3[] corners = new Vector3[4];
+        ImageDisplayer.Instance.image.rectTransform.GetWorldCorners(corners);
+
+        float top = Mathf.Max(corners[0].y, corners[1].y, corners[2].y, corners[3].y);
+        float bottom = Mathf.Min(corners[0].y, corners[1].y, corners[2].y, corners[3].y);
+        float right = Mathf.Max(corners[0].x, corners[1].x, corners[2].x, corners[3].x);
+        float left = Mathf.Min(corners[0].x, corners[1].x, corners[2].x, corners[3].x);
+
+        float xCoord = x / Map.Width;
+        float yCoord = y / Map.Height;
+
+        Vector2 result = new Vector2();
+
+        result.x = left + (right - left) * xCoord;
+        result.y = bottom + (top - bottom) * yCoord;
+        return result;
     }
 }

@@ -86,8 +86,8 @@ public class ImageLoader : MonoBehaviour
     {
         Map map = MapFromFile(lastPath);
 
-        Vector2Int? startCoords = Paint.StartCoordinates;
-        Vector2Int? endCoords = Paint.EndCoordinates;
+        Vector2Int startCoords = Paint.StartCoordinates.Value;
+        Vector2Int endCoords = Paint.EndCoordinates.Value;
 
         ImageDisplayer.LoadImage(map, true);
 
