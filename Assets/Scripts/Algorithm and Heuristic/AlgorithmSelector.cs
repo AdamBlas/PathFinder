@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class AlgorithmSelector : MonoBehaviour
 {
+	[Tooltip("Singleton")]
+	static AlgorithmSelector Instance;
+	
 	[Tooltip("Dropdown with all possible algorithms")]
 	public TMPro.TMP_Dropdown algorithmDropdown;
 	
@@ -30,6 +33,9 @@ public class AlgorithmSelector : MonoBehaviour
 	// Awake is called when the script instance is being loaded.
 	protected void Awake()
 	{
+		// Create singleton
+		Instance = this;
+		
 		// Subscribe events
 		algorithmDropdown.onValueChanged.AddListener(OnAlgorithmChanged);
 		heuristicDropdown.onValueChanged.AddListener(OnHeuristicChanged);
@@ -55,14 +61,16 @@ public class AlgorithmSelector : MonoBehaviour
 		heuristics = new Heuristic[]
 		{
 			new Dijkstra(),
-			new InversedDijkstra()
+			new DistanceToGoal(),
+			new Manhattan(),
+			new InversedManhattan()
 		};
 		
 		// Create algorithms objects
 		algorithms = new Algorithm[]
 		{
-			new AStar(Dijkstra.Instance, InversedDijkstra.Instance),
-			new HPAStar(Dijkstra.Instance, InversedDijkstra.Instance),
+			new AStar(Dijkstra.Instance, DistanceToGoal.Instance, Manhattan.Instance, InversedManhattan.Instance),
+			new HPAStar(Dijkstra.Instance, DistanceToGoal.Instance, Manhattan.Instance, InversedManhattan.Instance),
 			new JPS(Dijkstra.Instance)
 		};
 	}
@@ -78,6 +86,10 @@ public class AlgorithmSelector : MonoBehaviour
 		// For each algorithm, create dropdown item
 		foreach (Algorithm alg in algorithms)
 			algorithmDropdown.options.Add(new TMPro.TMP_Dropdown.OptionData() { text = alg.name });
+			
+		// Select first algorithm
+		algorithmDropdown.value = 0;
+		algorithmDropdown.onValueChanged.Invoke(0);
 	}
 	
 	/// <summary>
@@ -91,6 +103,10 @@ public class AlgorithmSelector : MonoBehaviour
 		// For each heuristic for selected algorithm, create dropdown item
 		foreach (Heuristic heur in selectedAlgorithm.heuristics)
 			heuristicDropdown.options.Add(new TMPro.TMP_Dropdown.OptionData() { text = heur.name });
+			
+		// Select first heuristic
+		heuristicDropdown.value = 0;
+		heuristicDropdown.onValueChanged.Invoke(0);
 	}
 	
 	/// <summary>
@@ -112,5 +128,21 @@ public class AlgorithmSelector : MonoBehaviour
 	{
 		// Display heuristic's description
 		heuristicDescription.text = heuristics[index].description;
+		
+		// Update dropdown layer (it can bug and don't display heuristic's name)
+		heuristicDropdown.captionText.text = heuristics[index].name;
+	}
+	
+	/// <summary>
+	/// Solves pathfinding problem using selected algorithm and heuristic
+	/// </summary>
+	public static void Solve()
+	{
+		// Get algorithm and heuristic
+		Algorithm algorithm = Instance.algorithms[Instance.algorithmDropdown.value];
+		Heuristic heuristic = Instance.heuristics[Instance.heuristicDropdown.value];
+		
+		// Solve the problem
+		Instance.StartCoroutine(algorithm.Solve(heuristic));
 	}
 }

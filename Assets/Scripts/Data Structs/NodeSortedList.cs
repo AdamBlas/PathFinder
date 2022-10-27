@@ -38,6 +38,7 @@ public class NodeSortedList
 	/// <param name="newElement"></param>
 	public void Add (Node newElement)
 	{
+		// Debug.Log("Adding new node: " + newElement);
 		newElements.Add(newElement);
 	}
 
@@ -63,14 +64,29 @@ public class NodeSortedList
 			// FInd index for the element
 			int index = sortedList.BinarySearch(element);
 			
-			// Don't know what this part is doing, to verify later
-			// if (index < 0) index = -index - 1;
-			
+			// If index is negative, inverse it
+			if (index < 0) index = ~index;
+				
 			// Insert element into calculated position
 			sortedList.Insert(index, element);
 		}
 		
 		// Clear buffer for new elements
 		newElements.Clear();
+	}
+	
+	public override string ToString()
+	{
+		string result = string.Empty;
+		
+		result += "New elements: ";
+		foreach (Node node in newElements)
+			result += node.goalBoundCost + "  |  ";
+			
+		result += "\nSorted List: ";
+		foreach (Node node in sortedList)
+			result += node.goalBoundCost + "  |  ";
+			
+		return result;
 	}
 }

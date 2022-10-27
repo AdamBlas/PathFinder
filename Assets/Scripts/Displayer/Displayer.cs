@@ -14,37 +14,48 @@ public class Displayer : MonoBehaviour
 	[Tooltip("Map's mask")]
 	public RectTransform mask;
 	
-	[Tooltip("Map displayer layer")]
+	[Tooltip("Map layer")]
 	public Image mapDisplayer;
 	
-	[Tooltip("Map overlay layer")]
-	public Image mapOverlay;
+	[Tooltip("Path layer")]
+	public Image pathDisplayer;
 	
-	[Tooltip("Map hover layer")]
-	public Image mapHover;
+	[Tooltip("Start and Goal Layer")]
+	public Image startGoalDisplayer;
+	
+	[Tooltip("Hover layer")]
+	public Image hoverDisplayer;
 	
 	// Colors
 	public Color freeColor = new Color(1f, 1f, 1f);
 	public Color obstacleColor = new Color(.25f, .25f, .25f);
-	public Color startColor = new Color(1f, .6f, 0);
-	public Color goalColor = new Color(1f, .2f, 0);
-	public Color pathColor = new Color(.5f, 0, 1);
+	public Color startColor = new Color(1f, .6f, 0f);
+	public Color goalColor = new Color(1f, .2f, 0f);
+	public Color pathColor = new Color(.5f, 0f, 1);
 	public Color subpathColor1 = new Color(.75f, .5f, 1);
 	public Color subpathColor2 = new Color(.75f, .65f, 1);
-	public Color toAnalyzeColor = new Color(.6f, 1f, .6f);
-	public Color analyzedColor = new Color(.15f, 1f, .15f);
+	public Color toAnalyzeColor = new Color(.8f, 1f, .6f);
+	public Color analyzedColor = new Color(0f, 0.75f, 0f);
 
-	[Tooltip("Texture of the map displayer layer")]
+	[Tooltip("Texture of the map layer")]
 	Texture2D mapTexture;
 	
-	[Tooltip("Texture of the map overlay layer")]
-	Texture2D overlayTexture;
+	[Tooltip("Texture of the path layer")]
+	Texture2D pathTexture;
+	
+	[Tooltip("Texture of the start/goal layer")]
+	Texture2D startGoalTexture;
 	
 	[Tooltip("Texture of the map hover layer")]
 	Texture2D hoverTexture;
 	
 	[Tooltip("Flag indicating whether or not mouse cursor is inside mask")]
 	public static bool isMouseInside;
+	
+	[Tooltip("Flag indicating whether or not path layer should be updated")]
+	public static bool shouldUpdatePathLayer;
+
+
 
 
 
@@ -61,7 +72,18 @@ public class Displayer : MonoBehaviour
 	// Update is called every frame, if the MonoBehaviour is enabled.
 	protected void Update()
 	{
+		// Check if mouse is inside displayer mask
 		isMouseInside = IsMouseInsideMask();
+		
+		// Check if overlay layer should be updated
+		if (shouldUpdatePathLayer)
+		{
+			// Reset flag
+			shouldUpdatePathLayer = false;
+			
+			// Update layer
+			UpdatePathLayer();
+		}
 	}
 
 	/// <summary>
@@ -71,28 +93,36 @@ public class Displayer : MonoBehaviour
 	{
 		// Create textures
 		mapTexture = new Texture2D(Map.width, Map.height);
-		overlayTexture = new Texture2D(Map.width, Map.height);
+		pathTexture = new Texture2D(Map.width, Map.height);
+		startGoalTexture = new Texture2D(Map.width, Map.height);
+		
+		// Set filter mode so that textures are pixel-perfect and without blur
 		mapTexture.filterMode = FilterMode.Point;	
-		overlayTexture.filterMode = FilterMode.Point;
-		ClearTexture(mapTexture);
-		ClearTexture(overlayTexture);
+		pathTexture.filterMode = FilterMode.Point;
+		startGoalTexture.filterMode = FilterMode.Point;
+		
+		// Fill textures with transparent pixels
+		// No need to do that for map texture as it will be fully filled in the next step
+		ClearTexture(pathTexture);
+		ClearTexture(startGoalTexture);
 		
 		// Pain every pixel on the map
 		for (int row = 0; row < Map.height; row++)
 			for (int col = 0; col < Map.width; col++)
-				mapTexture.SetPixel(col, row, Map.map[row, col] == NodeType.FREE ? freeColor : obstacleColor);
-	
-		// If start or end nodes are set, print them
-		PrintStartCoords();
-		PrintGoalCoords();
-		
+				mapTexture.SetPixel(col, Map.height - 1 - row, Map.map[row, col] == NodeType.FREE ? freeColor : obstacleColor);
+
 		// Apply changes
 		mapTexture.Apply();
-		overlayTexture.Apply();
+		pathTexture.Apply();
+		startGoalTexture.Apply();
 		
 		// Save textures to images
 		UpdateDisplayLayer();
-		UpdateOverlayLayer();
+		UpdatePathLayer();
+		UpdateStartGoalLayer();
+		
+		// Remove start and goal nodes (in case there are already set)
+		StartGoalManager.Instance.ClearStartGoalCoords();
 	}
 	
 	/// <summary>
@@ -101,9 +131,9 @@ public class Displayer : MonoBehaviour
 	public void RemoveStartCoords()
 	{
 		if (StartGoalManager.startExists)
-			overlayTexture.SetPixel(StartGoalManager.startCol, StartGoalManager.startRow, new Color(0, 0, 0, 0));
+			startGoalTexture.SetPixel(StartGoalManager.startCol, StartGoalManager.startRow, new Color(0, 0, 0, 0));
 		
-		UpdateOverlayLayer();
+		UpdateStartGoalLayer();
 	}
 	
 	/// <summary>
@@ -112,9 +142,9 @@ public class Displayer : MonoBehaviour
 	public void RemoveGoalCoords()
 	{
 		if (StartGoalManager.goalExists)
-			overlayTexture.SetPixel(StartGoalManager.goalCol, StartGoalManager.goalRow, new Color(0, 0, 0, 0));
+			startGoalTexture.SetPixel(StartGoalManager.goalCol, StartGoalManager.goalRow, new Color(0, 0, 0, 0));
 	
-		UpdateOverlayLayer();
+		UpdateStartGoalLayer();
 	}
 	
 	/// <summary>
@@ -123,9 +153,9 @@ public class Displayer : MonoBehaviour
 	public void PrintStartCoords()
 	{
 		if (StartGoalManager.startExists)
-			overlayTexture.SetPixel(StartGoalManager.startCol, StartGoalManager.startRow, startColor);
+			startGoalTexture.SetPixel(StartGoalManager.startCol, StartGoalManager.startRow, startColor);
 		
-		UpdateOverlayLayer();
+		UpdateStartGoalLayer();
 	}
 	
 	/// <summary>
@@ -134,17 +164,32 @@ public class Displayer : MonoBehaviour
 	public void PrintGoalCoords()
 	{
 		if (StartGoalManager.goalExists)
-			overlayTexture.SetPixel(StartGoalManager.goalCol, StartGoalManager.goalRow, goalColor);
+			startGoalTexture.SetPixel(StartGoalManager.goalCol, StartGoalManager.goalRow, goalColor);
 	
-		UpdateOverlayLayer();
+		UpdateStartGoalLayer();
+	}
+	
+	/// <summary>
+	/// Paints new pixel on path layer
+	/// </summary>
+	/// <param name="row"> X coordinate to paint </param>
+	/// <param name="column"> Y coordinate to paint </param>
+	/// <param name="color"> Color to paint </param>
+	public void PaintPath(int row, int column, Color color)
+	{
+		// Set pixel's color
+		pathTexture.SetPixel(row, column, color);
+		
+		// Set flag so that texture will be updated next frame
+		shouldUpdatePathLayer = true;
 	}
 	
 	/// <summary>
 	/// Clears hover layer and sets new pixel
 	/// </summary>
-	/// <param name="row"></param>
-	/// <param name="column"></param>
-	/// <param name="color"></param>
+	/// <param name="row"> X coordinate to paint </param>
+	/// <param name="column"> Y coordinate to paint </param>
+	/// <param name="color"> Color to paint </param>
 	public void SetHoverPixel(int row, int column, Color color)
 	{
 		// Create new texture
@@ -153,7 +198,7 @@ public class Displayer : MonoBehaviour
 		ClearTexture(hoverTexture);
 		
 		// Sets pixel color
-		hoverTexture.SetPixel(row, column, color);
+		hoverTexture.SetPixel(row, -column - 1, color);
 		
 		// Apply changes and set texure to displayer
 		UpdateHoverLayer();
@@ -168,11 +213,19 @@ public class Displayer : MonoBehaviour
 	}
 	
 	/// <summary>
-	/// Updates overlay image to display overlay texture
+	/// Updates path image to display path texture
 	/// </summary>
-	public void UpdateOverlayLayer()
+	public void UpdatePathLayer()
 	{
-		UpdateLayer(overlayTexture, mapOverlay);
+		UpdateLayer(pathTexture, pathDisplayer);
+	}
+	
+	/// <summary>
+	/// Updates start/goal image to display start/goal texture
+	/// </summary>
+	public void UpdateStartGoalLayer()
+	{
+		UpdateLayer(startGoalTexture, startGoalDisplayer);
 	}
 	
 	/// <summary>
@@ -180,7 +233,7 @@ public class Displayer : MonoBehaviour
 	/// </summary>
 	public void UpdateHoverLayer()
 	{
-		UpdateLayer(hoverTexture, mapHover);
+		UpdateLayer(hoverTexture, hoverDisplayer);
 	}
 	
 	/// <summary>
@@ -223,6 +276,27 @@ public class Displayer : MonoBehaviour
 			
 		// Return result
 		return isMouseInside;
+	}
+	
+	/// <summary>
+	/// Clears all pixels in path layer
+	/// </summary>
+	public void ClearPathLayer()
+	{
+		// Clear texture
+		ClearTexture(pathTexture);
+		
+		// Apply changes
+		UpdatePathLayer();
+	}
+	
+	public void ClearStartGoalLayer()
+	{
+		// Clear texture
+		ClearTexture(startGoalTexture);
+		
+		// Apply changes
+		UpdateStartGoalLayer();
 	}
 	
 	/// <summary>

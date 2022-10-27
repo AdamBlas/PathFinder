@@ -50,10 +50,10 @@ public class LoadMap : MonoBehaviour
 		
 		// Iterate through all content and set nodes' values
 		// If free characters list contains character, set node as free, otherwise, obstacle
-		for (int row = height - 1; row >= 0; row--)
+		for (int row = 0; row < height; row++)
 			for (int col = 0; col < width; col++)
-				Map.map[row, col] = freeChars.IndexOf(mapText[3 + height - row][col]) >= 0 ? FREE : OBSTACLE;
-				
+				Map.map[row, col] = freeChars.IndexOf(mapText[4 + row][col]) >= 0 ? FREE : OBSTACLE;
+
 		// Trim map
 		Map.Trim();
 		

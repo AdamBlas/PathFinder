@@ -19,17 +19,27 @@ public class Dijkstra : Heuristic
 		
 		// Set name and description
 		name = "Dijkstra";
-		description = "Dijkstra - Dijkstra's algorithm is not actually a heuristic, but it works as an A* algorithm with specific heuristic.\nThe best node is the one closest to the start node. Distance is calulated using Pythagorean theorem.";
+		description = "Dijkstra - Dijkstra's algorithm is not actually a heuristic, but it works as an A* algorithm with specific heuristic.\nThe best node is the one with shortest path to get to. Diagonal distance is calulated using Pythagoras theorem.";
 	}
 	
 	/// <summary>
 	/// Calculates cost of the node based on distance to the start node
 	/// </summary>
-	/// <param name="node"></param>
+	/// <param name="node"> Node which cost has to be calculated </param>
 	public override void CalculateCost(Node node)
 	{
-		// Calculate distance from the start ndoe
-		// No need to calculate square root since comparing pows will give the same results
-		node.cost = Mathf.Pow(node.x - StartGoalManager.startCol, 2) + Mathf.Pow(node.y - StartGoalManager.startRow, 2);
+		// Get offsets
+		int xOffset = Mathf.Abs(node.x - node.parentNode.x);
+		int yOffset = Mathf.Abs(node.y - node.parentNode.y);
+		
+		// If both of them are 1s, movement was diagonal
+		// Add square root of two to cost
+		if (xOffset == 1 && yOffset == 1)
+			node.baseCost = node.parentNode.baseCost + 1.4142f;
+		else
+			node.baseCost = node.parentNode.baseCost + 1;
+			
+		// Apply goal bounding
+		ApplyGoalBounding(node);
 	}
 }

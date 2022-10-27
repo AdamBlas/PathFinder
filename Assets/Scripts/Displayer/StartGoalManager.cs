@@ -5,6 +5,9 @@ using UnityEngine.UI;
 
 public class StartGoalManager : MonoBehaviour
 {
+	[Tooltip("Singleton")]
+	public static StartGoalManager Instance;
+	
 	// Start coords
 	public static bool startExists = false;
 	public static int startRow = -1, startCol = -1;
@@ -46,6 +49,9 @@ public class StartGoalManager : MonoBehaviour
 	// Start is called on the frame when a script is enabled just before any of the Update methods is called the first time.
 	protected void Start()
 	{
+		// Create singleton
+		Instance = this;
+		
 		// Set buttons' colors
 		startShadow.Color = Displayer.Instance.startColor;
 		goalShadow.Color = Displayer.Instance.goalColor;
@@ -133,7 +139,7 @@ public class StartGoalManager : MonoBehaviour
 		startCol = column;
 		
 		// Print that values to GUI
-		startButtonLabel.text = "Start: C" + (column + 1) + " R" + -row;
+		startButtonLabel.text = "Start: C" + column + " R" + row;
 		
 		Displayer.Instance.PrintStartCoords();
 	}
@@ -154,7 +160,7 @@ public class StartGoalManager : MonoBehaviour
 		goalCol = column;
 		
 		// Print that values to GUI
-		goalButtonLabel.text = "Goal: C" + (column + 1) + " R" + -row;
+		goalButtonLabel.text = "Goal: C" + column + " R" + row;
 		
 		Displayer.Instance.PrintGoalCoords();
 	}
@@ -185,7 +191,29 @@ public class StartGoalManager : MonoBehaviour
 			return null;
 		
 		// Round values to ints and return result
-		Vector2Int result = new Vector2Int(Mathf.FloorToInt(-y), Mathf.FloorToInt(x));
+		Vector2Int result = new Vector2Int(Mathf.FloorToInt(y), Mathf.FloorToInt(x));
 		return result;
+	}
+	
+	/// <summary>
+	/// Clear start and goal nodes' data
+	/// </summary>
+	public void ClearStartGoalCoords()
+	{
+		// Set data
+		startRow = -1;
+		startCol = -1;
+		goalRow = -1;
+		goalCol = -1;
+		startExists = false;
+		goalExists = false;
+		
+		// Update GUI
+		startButtonLabel.text = "Start: None";
+		goalButtonLabel.text = "Goal: None";
+		
+		// Clear displayer
+		Displayer.Instance.RemoveStartCoords();
+		Displayer.Instance.RemoveGoalCoords();
 	}
 }

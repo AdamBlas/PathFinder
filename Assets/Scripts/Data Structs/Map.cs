@@ -113,4 +113,31 @@ public static class Map
 		// Save new map
 		map = newMap;
 	}
+	
+	/// <summary>
+	/// Returns map object as string
+	/// </summary>
+	/// <returns> Map as string </returns>
+	public static string StaticToString()
+	{
+		string result = string.Empty;
+		
+		for (int i = 0; i < height; i++)
+		{
+			for (int j = 0 ; j < width; j++)
+			{
+				if (i == StartGoalManager.startRow && j == StartGoalManager.startCol)
+					result += "S";
+				else if (i == StartGoalManager.goalRow && j == StartGoalManager.goalCol)
+					result += "G";
+				else
+					result += map[i, j] == FREE ? " " : "#";
+			}
+			result += "\n";
+		}
+		
+		
+		
+		return result;
+	}
 }

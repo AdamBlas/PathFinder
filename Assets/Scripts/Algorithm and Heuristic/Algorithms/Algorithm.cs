@@ -31,4 +31,31 @@ public abstract class Algorithm
 	/// </summary>
 	/// <param name="heuristic"> Heuristic used to calculate node's value </param>
 	public abstract IEnumerator Solve(Heuristic heuristic);
+	
+	
+	/// <summary>
+	/// Prints path from final node back to the goal node
+	/// </summary>
+	/// <param name="node"> Final node in the path </param>
+	/// <param name="nodesAmount"> Out parameter, amount of nodes in the path </param>
+	/// <param name="pathLength"> Out parameter, length of the path </param>
+	protected void PrintPath(Node node, out int nodesAmount, out float pathLength)
+	{
+		// Paint all pixels on displayer and calculate path's length
+		nodesAmount = 0;
+		pathLength = 0;
+		
+		while (node.parentNode != null)
+		{
+			// Paint pixel
+			Displayer.Instance.PaintPath(node.x, node.y, Displayer.Instance.pathColor);
+			
+			// Add distances
+			nodesAmount += 1;
+			pathLength += Mathf.Sqrt(Mathf.Pow(node.x - node.parentNode.x, 2) + Mathf.Pow(node.y - node.parentNode.y, 2));
+			
+			// Switch node to parent
+			node = node.parentNode;
+		}
+	}
 }
