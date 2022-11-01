@@ -19,7 +19,7 @@ public class Dijkstra : Heuristic
 		
 		// Set name and description
 		name = "Dijkstra";
-		description = "Dijkstra - Dijkstra's algorithm is not actually a heuristic, but it works as an A* algorithm with specific heuristic.\nThe best node is the one with shortest path to get to. Diagonal distance is calulated using Pythagoras theorem.";
+		description = "Dijkstra - Dijkstra's algorithm is not actually a heuristic, but it works as an A* algorithm with specific heuristic.\nThe best node is the one with shortest path to get to. Diagonal distance is calulated using Pythagorean theorem.";
 	}
 	
 	/// <summary>
@@ -32,12 +32,11 @@ public class Dijkstra : Heuristic
 		int xOffset = Mathf.Abs(node.x - node.parentNode.x);
 		int yOffset = Mathf.Abs(node.y - node.parentNode.y);
 		
-		// If both of them are 1s, movement was diagonal
-		// Add square root of two to cost
-		if (xOffset == 1 && yOffset == 1)
-			node.baseCost = node.parentNode.baseCost + 1.4142f;
-		else
-			node.baseCost = node.parentNode.baseCost + 1;
+		// Get root of the sum of their pows
+		float cost = sqrts[(xOffset * xOffset) + (yOffset * yOffset)];
+		
+		// Add that cost to the node's cost
+		node.baseCost = node.parentNode.baseCost + cost;
 			
 		// Apply goal bounding
 		ApplyGoalBounding(node);

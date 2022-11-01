@@ -61,16 +61,14 @@ public class AlgorithmSelector : MonoBehaviour
 		heuristics = new Heuristic[]
 		{
 			new Dijkstra(),
-			new DistanceToGoal(),
 			new Manhattan(),
-			new InversedManhattan()
 		};
 		
 		// Create algorithms objects
 		algorithms = new Algorithm[]
 		{
-			new AStar(Dijkstra.Instance, DistanceToGoal.Instance, Manhattan.Instance, InversedManhattan.Instance),
-			new HPAStar(Dijkstra.Instance, DistanceToGoal.Instance, Manhattan.Instance, InversedManhattan.Instance),
+			new AStar(Dijkstra.Instance, Manhattan.Instance),
+			new HPAStar(Dijkstra.Instance, Manhattan.Instance),
 			new JPS(Dijkstra.Instance)
 		};
 	}

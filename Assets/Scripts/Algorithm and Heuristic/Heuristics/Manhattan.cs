@@ -28,12 +28,12 @@ public class Manhattan : Heuristic
 	/// <param name="node"> Node which cost has to be calculated </param>
 	public override void CalculateCost(Node node)
 	{
-		// Calculate absolute values of the offsets
-		int xOffset = Mathf.Abs(node.x - StartGoalManager.startCol);
-		int yOffset = Mathf.Abs(node.y - StartGoalManager.startRow);
+		// Calculate absolute values of the node-parent offsets
+		int xOffset = Mathf.Abs(node.x - node.parentNode.x);
+		int yOffset = Mathf.Abs(node.y - node.parentNode.y);
 		
-		// Save sum
-		node.baseCost = xOffset + yOffset;
+		// Cost is equal to the parent cost + sum of the offsets
+		node.baseCost = node.parentNode.baseCost + xOffset + yOffset;
 		
 		// Apply goal bounding
 		ApplyGoalBounding(node);
