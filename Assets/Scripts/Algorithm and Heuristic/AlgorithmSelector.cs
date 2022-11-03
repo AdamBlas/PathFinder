@@ -25,6 +25,8 @@ public class AlgorithmSelector : MonoBehaviour
 	[Tooltip("All possible heuristics")]
 	Heuristic[] heuristics;
 	
+	[Tooltip("Solver's coroutine")]
+	
 	
 	
 	
@@ -131,16 +133,9 @@ public class AlgorithmSelector : MonoBehaviour
 		heuristicDropdown.captionText.text = heuristics[index].name;
 	}
 	
-	/// <summary>
-	/// Solves pathfinding problem using selected algorithm and heuristic
-	/// </summary>
-	public static void Solve()
-	{
-		// Get algorithm and heuristic
-		Algorithm algorithm = Instance.algorithms[Instance.algorithmDropdown.value];
-		Heuristic heuristic = Instance.heuristics[Instance.heuristicDropdown.value];
-		
-		// Solve the problem
-		Instance.StartCoroutine(algorithm.Solve(heuristic));
-	}
+	/// <returns> Currently selected algorithm </returns>
+	public static Algorithm GetAlgorithm() => Instance.algorithms[Instance.algorithmDropdown.value];
+	
+	/// <returns> Currently selected heuristic </returns>
+	public static Heuristic GetHeuristic() => Instance.heuristics[Instance.heuristicDropdown.value];
 }

@@ -33,9 +33,13 @@ public class Array2D<T>
 	{
 		get 
 		{
-			if (x >= width || y >= height)
+			try
+			{
+				return array[x, y];
+			} catch (System.IndexOutOfRangeException)
+			{
 				throw new System.IndexOutOfRangeException("Get: X=" + x + "/" + width + ", Y=" + y + "/" + height);
-			return array[x, y];
+			}
 		}
 		set
 		{

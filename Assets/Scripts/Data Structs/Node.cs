@@ -90,6 +90,6 @@ public class Node : System.IComparable<Node>
 	
 	public override string ToString()
 	{
-		return "X=" + x + ", Y=" + y + ", Base cost=" + baseCost + " GoalBound cost=" + goalBoundCost + ", Parent={ " + (parentNode == null ? "NULL" : ("X=" + parentNode.x + ", Y=" + parentNode.y)) + " }";
+		return "X=" + x + ", Y=" + y + ", Base cost=" + baseCost + ", GoalBound cost=" + goalBoundCost + ", Parent={ " + (parentNode == null ? "NULL" : ("X=" + parentNode.x + ", Y=" + parentNode.y)) + " }";
 	}
 }

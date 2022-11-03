@@ -1,49 +1,70 @@
-                                                                
+                                                                                
 
-   ####    ####    ####    ####>  <##O#>  <####    ####    #    
-   ####    ####    ####    ####>  <OOOO>  <####    ####    #    
-   ####    ####    ####    ###O>  <OOOO>  <O###    ####    #    
-   ####    ####    ####    ##OO>  <#OOO>  <OO##    ####    #    
-                           ^^^^    ^^^^/  \^^^^                 
-                           vvvv    vvvv\  /vvvv                 
+   ####    ####    ####    ####    ####    ####>  <#O##    ####    ####    #### 
+   ####    ####    ####    ####    ####    #OO#>  <OOO#    ####    ####    #### 
+   ####    ####    ####    ####    ####    #OOO>  <OO##    ####    ####    #### 
+   ####    ####    ####    ####    ####    ##OO>  <OO##    #O##    ####    #### 
+                                           ^^^^/  \^^^^    ^^^^                 
+                                           vvvv\  /vvvv    vvvv                 
 
-   ####    ####    ####>  <#OO#    ##OO>  <O###>  <####    #    
-   ####    ####    ####>  <OO##    ####>  <OOOO>  <O###    #    
-   ####    ####    ###O>  <O###    ####>  <#OOO>  <OO##    #    
-   ####    ####    ##OO>  <OO##    ####>  <##OO>  <OOOO    #    
-                   ^^^^   \^^^^            ^^^^/  \^^^^/        
-                   vvvv\   vvvv            vvvv\  /vvvv   /     
+   ####    ####    ####    ####    ####>  <##OO>  <OO##>  <OOOO>  <O###    #### 
+   ####    ####    ####    ####    ####>  <OOOO>  <OOOO>  <OOOO>  <O###    #### 
+   ####    ####    ####    ####    ###O>  <OOOO>  <OOOO>  <OOOO>  <O###    #### 
+   ####    ####    ####    ####    ##OO>  <OOOO>  <OOOO>  <OOOO>  <O##O    #### 
+                                   ^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^/        
+                                   vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv   /     
 
-   ####    ####>  <#OOO    #OOO>  <####>  <##OO>  <OOOO>  <O    
-   ####    ####>  <OOO#    ##OO>  <O###>  <#OOO>  <OOOO>  <O    
-   ####    ####>  <OOO#    ####>  <OO##>  <OOOO>  <OOOO>  <O    
-   ####    ###O>  <OOOO    ####>  <#OOO>  <OOOO>  <OOOO>  <#    
-           ^^^^/  \^^^^/           ^^^^/  \^^^^/  \^^^^         
-           vvvv\  /vvvv   /        vvvv\  /vvvv\  /vvvv         
+   ####    ####    ####    ####>  <#OOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <O### 
+   ####    ####    ####    ####>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OO## 
+   ####    ####    ####    ##OO>  <OOO#>  <##OO>  <OOOO>  <OOOO>  <OOOO>  <OOO# 
+   ####    OO##    ####    #OOO>  <OO##>  <###O>  <OOOO>  <OOOO>  <OOOO>  <OOOO 
+          \^^^^            ^^^^/  \^^^^        /   ^^^^/  \^^^^/  \^^^^/  \^^^^ 
+       \   vvvv            vvvv\  /vvvv           /vvvv\  /vvvv\  /vvvv\  /vvvv 
 
-   ####>  <##OO>  <OOOO>  <O###>  <#OOO>  <OOOO>  <OOO#    #    
-   ####>  <#OOO>  <OOOO>  <OO##>  <OOOO>  <OOOO>  <OO##    #    
-   ###O>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <O###    #    
-   ##OO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <####    #    
-   ^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^                 
-   vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv                 
+   ###O>  <OOO#    #OOO>  <OOOO>  <O###    ####>  <OOOO>  <OOOO>  <OOOO>  <OOOO 
+   ##OO>  <OOO#    OOOO>  <OOOO>  <####    ###O>  <OOOO>  <OOOO>  <OOOO>  <OOOO 
+   #OOO>  <OOO#    #OOO>  <OOO#>  <####    ##OO>  <OOOO>  <OOOO>  <OOOO>  <OOO# 
+   OOOO>  <OOOO    #OOO>  <OO##>  <####    #OOO>  <OOOO>  <OOOO>  <OOOO>  <OO## 
+   ^^^^/  \^^^^    ^^^^/  \^^^^            ^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^ 
+   vvvv\  /vvvv    vvvv\  /vvvv            vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv 
 
-   #OOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOO#    ####    #    
-   #OOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OO##    ####    #    
-   OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OO##    ####    #    
-   #OOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <O###    ####    #    
-   ^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^   \                     
-   vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv\                        
+   #OOO>  <OOOO>  <##OO>  <O###    ####>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <O### 
+   #OOO>  <OOOO>  <O#OO>  <####    ###O>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <#### 
+   ##OO>  <OOOO>  <O#OO>  <O###    #OOO>  <OOOO>  <OOOO>  <OOOO>  <OOO#>  <#### 
+   ##OO>  <OOOO>  <O##O>  <OO##    OOOO>  <OOOO>  <OOOO>  <OOOO>  <OO##>  <#### 
+   ^^^^/  \^^^^/  \^^^^/  \^^^^   \^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^         
+   vvvv\  /vvvv\  /vvvv\  /vvvv\   vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv         
 
-   ##OO>  <OOOO>  <OOOO>  <OOOO>  <OOOO    ####    ####    #    
-   ###O>  <OOOO>  <OOOO>  <OOOO>  <OOO#    ####    ####    #    
-   ####>  <OOOO>  <OOOO>  <OOOO>  <OO##    ####    ####    #    
-   ####>  <#OOO>  <OOOO>  <OOOO>  <O###    ####    ####    #    
-           ^^^^/  \^^^^/  \^^^^   \                             
-           vvvv\  /vvvv\  /vvvv\                                
+   ###O>  <OOOO>  <OO#O>  <OO#O>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <O###    #### 
+   ###O>  <OOOO>  <OO#O>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <####    #### 
+   ####>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOO#>  <####    #### 
+   ####>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OO##>  <####    #### 
+           ^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^                 
+           vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv                 
 
-   ####    ##OO>  <OOOO>  <OOOO    ####    ####    ####    #    
-   ####    ###O>  <OOOO>  <OOO#    ####    ####    ####    #    
-               >  <    >  <                                     
-               >  <    >  <                                     
-                                                                
+   ####>  <#OOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <O###    ####    #### 
+   ####>  <#OOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <####    ####    #### 
+   ####>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOO#>  <####    ####    #### 
+   ###O>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OO##>  <####    ####    #### 
+   ^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^                         
+   vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv                         
+
+   ##OO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <O###    ####    ####    #### 
+   ##OO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <####    ####    ####    #### 
+   ###O>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OOO#>  <####    ####    ####    #### 
+   ####>  <OOOO>  <OOOO>  <OOOO>  <OOOO>  <OO##>  <####    ####    ####    #### 
+           ^^^^/  \^^^^/  \^^^^/  \^^^^/  \^^^^                                 
+           vvvv\  /vvvv\  /vvvv\  /vvvv\  /vvvv                                 
+
+   ####    #OOO>  <OOOO>  <OOOO>  <OOOO>  <O###    ####    ####    ####    #### 
+   ####    ##OO>  <OOOO>  <OOOO>  <OOOO>  <####    ####    ####    ####    #### 
+   ####    ###O>  <OOOO>  <OOOO>  <OOO#>  <####    ####    ####    ####    #### 
+   ####    ####>  <OOOO>  <OOOO>  <OO##>  <####    ####    ####    ####    #### 
+                   ^^^^/  \^^^^/  \^^^^                                         
+                   vvvv\  /vvvv\  /vvvv                                         
+
+   ####    ####    #OOO>  <OOOO>  <O###    ####    ####    ####    ####    #### 
+   ####    ####    ##OO>  <OOOO>  <####    ####    ####    ####    ####    #### 
+                       >  <    >  <                                             
+                       >  <    >  <                                             
+                                                                                

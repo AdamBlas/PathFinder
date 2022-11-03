@@ -36,6 +36,7 @@ public class Displayer : MonoBehaviour
 	public Color subpathColor2 = new Color(.75f, .65f, 1);
 	public Color toAnalyzeColor = new Color(.8f, 1f, .6f);
 	public Color analyzedColor = new Color(0f, 0.75f, 0f);
+	public Color subAnalyzedColor = new Color(.25f, .5f, .5f);
 
 	[Tooltip("Texture of the map layer")]
 	Texture2D mapTexture;

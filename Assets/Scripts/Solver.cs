@@ -26,6 +26,10 @@ public class Solver : MonoBehaviour
 	[Tooltip("Button responsible for next step")]
 	public Button nextStepButton;
 	
+	[Tooltip("Solver's coroutine")]
+	Coroutine solverCoroutine;
+	
+	
 	
 	
 	
@@ -70,8 +74,8 @@ public class Solver : MonoBehaviour
 		// Clear path displayer
 		Displayer.Instance.ClearPathLayer();
 		
-		// Send invoke to the class containing selected algorithm and heuristic
-		AlgorithmSelector.Solve();
+		// Start solving coroutine
+		solverCoroutine = StartCoroutine(AlgorithmSelector.GetAlgorithm().Solve(AlgorithmSelector.GetHeuristic()));
 	}
 	
 	/// <summary>
@@ -79,6 +83,10 @@ public class Solver : MonoBehaviour
 	/// </summary>
 	public void Clear()
 	{
+		// Stop solving coroutine if such exists
+		if (solverCoroutine != null)
+			StopCoroutine(solverCoroutine);
+		
 		// Send invoke to displayer
 		Displayer.Instance.ClearPathLayer();
 	}

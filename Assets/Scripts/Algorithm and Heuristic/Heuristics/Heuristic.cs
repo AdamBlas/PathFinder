@@ -39,6 +39,7 @@ public abstract class Heuristic
 		if (GoalBoundingManager.shouldApply)
 		{
 			// Calculate angle to the target
+			// Vector2 fromParent = new Vector2(node.x - node.parentNode.x, node.y - node.parentNode.y);
 			Vector2 fromStart = new Vector2(node.x - StartGoalManager.startCol, node.y - StartGoalManager.startRow);
 			Vector2 toGoal = new Vector3(StartGoalManager.goalCol - node.parentNode.x, StartGoalManager.goalRow - node.parentNode.y);
 			float angle = Vector2.Angle(fromStart, toGoal);

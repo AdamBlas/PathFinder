@@ -18,7 +18,8 @@ public enum NodeType
 public static class Map
 {
 	[Tooltip("Most recently created map")]
-	public static NodeType[,] map;
+	//public static NodeType[,] map;
+	public static Array2D<NodeType> map;
 	
 	// Dimensions of the map
 	public static int width, height;
@@ -36,7 +37,7 @@ public static class Map
 	public static void CreateMap(int width, int height)
 	{
 		// Create new array
-		map = new NodeType[height, width];
+		map = new Array2D<NodeType>(height, width);
 	
 		// Save dimensions
 		Map.width = width;
@@ -103,7 +104,8 @@ public static class Map
 		height = yMax - yMin;
 		
 		// Create new array
-		NodeType[,] newMap = new NodeType[height, width];
+		Array2D<NodeType> newMap = new Array2D<NodeType>(height, width);
+		// NodeType[,] newMap = new NodeType[height, width];
 		
 		// Copy content from current map
 		for (int row = 0; row < height; row++)

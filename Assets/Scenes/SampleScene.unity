@@ -4915,6 +4915,7 @@ MonoBehaviour:
   subpathColor2: {r: 0.75, g: 0.65, b: 1, a: 1}
   toAnalyzeColor: {r: 0.8, g: 1, b: 0.6, a: 1}
   analyzedColor: {r: 0, g: 0.75, b: 0, a: 1}
+  subAnalyzedColor: {r: 0.25, g: 0.5, b: 0.5, a: 1}
 --- !u!1 &793007618
 GameObject:
   m_ObjectHideFlags: 0
