@@ -23,22 +23,19 @@ public class Dijkstra : Heuristic
 	}
 	
 	/// <summary>
-	/// Calculates cost of the node based on distance to the start node
+	/// Calculates cost of the node based on distance to the start node 
 	/// </summary>
-	/// <param name="node"> Node which cost has to be calculated </param>
-	public override void CalculateCost(Node node)
+	/// <param name="x"> X coordinate of the node </param>
+	/// <param name="y"> Y coordinate of the node </param>
+	/// <param name="parentNode"> Parent node </param>
+	/// <returns> Node's base cost </returns>
+	public override float GetPassageCost(int x, int y, Node parentNode)
 	{
 		// Get offsets
-		int xOffset = Mathf.Abs(node.x - node.parentNode.x);
-		int yOffset = Mathf.Abs(node.y - node.parentNode.y);
+		int xOffset = Mathf.Abs(x - parentNode.x);
+		int yOffset = Mathf.Abs(y - parentNode.y);
 		
-		// Get root of the sum of their pows
-		float cost = sqrts[(xOffset * xOffset) + (yOffset * yOffset)];
-		
-		// Add that cost to the node's cost
-		node.baseCost = node.parentNode.baseCost + cost;
-			
-		// Apply goal bounding
-		ApplyGoalBounding(node);
+		// Return root of the sum of their pows
+		return sqrts[(xOffset * xOffset) + (yOffset * yOffset)];
 	}
 }

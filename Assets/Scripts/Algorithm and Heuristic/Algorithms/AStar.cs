@@ -5,6 +5,21 @@ using static NodeType;
 
 public class AStar : Algorithm
 {
+	[Tooltip("Array of visited nodes")]
+	Node[,] nodesVisited;
+	
+	[Tooltip("List of nodes to analyze")]
+	NodeSortedList list;
+	
+	[Tooltip("Selected heursitic")]
+	Heuristic heuristic;
+	
+	[Tooltip("Amount of nodes to analyze")]
+	int nodesToAnalyze;
+	
+	
+	
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -13,6 +28,49 @@ public class AStar : Algorithm
 		// Set name and description
 		name = "A*";
 		description = "A* - Algorithm selects the best node from the available pool and adds all adjecent nodes to the pool.\nIt guarantees to find a solution if such exists and that solution will be the best one possible.";
+	}
+	
+	/// <summary>
+	/// Try to expand in a given direction
+	/// </summary>
+	/// <param name="x"> X coordinate to expand </param>
+	/// <param name="y"> Y coordinate to expand </param>
+	/// <param name="node"> Parent node </param>
+	public void TryToExpand(int x, int y, Node node)
+	{
+		// If can expand in that direction, do it
+		if (nodesVisited[x, y] != null)
+		{
+			// This node was visited, check if there is a need to overwrite cost
+			if (CostOverwriteManager.shouldOverwrite)
+			{
+				// Calculate new costs
+				heuristic.GetCosts(x, y, node, out float baseCost, out float goalBoundingCost);
+
+				// If new goal bounded cost is lower than previous one, overwrite costs and add node to list once again
+				if (goalBoundingCost < nodesVisited[x, y].goalBoundCost)
+				{
+					Debug.Log("Cost overwritten from " + nodesVisited[x, y].goalBoundCost + " to " + goalBoundingCost);
+					
+					nodesVisited[x, y].baseCost = baseCost;
+					nodesVisited[x, y].goalBoundCost = goalBoundingCost;
+					list.Add(nodesVisited[x, y]);								
+				}
+			}
+		}
+		else if (Map.map[y, x] == FREE)
+		{
+			// Node wasn't visited before, create new one and add it to list
+			Node newNode = new Node(x, y, node, heuristic);
+			list.Add(newNode);
+						
+			// Mark spot as visited
+			nodesVisited[x, y] = newNode;
+						
+			// Increase amount of analyzed nodes and paint pixel
+			nodesToAnalyze++;
+			Displayer.Instance.PaintPath(x, y, Displayer.Instance.toAnalyzeColor);
+		}
 	}
 	
 	/// <summary>
@@ -25,22 +83,25 @@ public class AStar : Algorithm
 		System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
 		timer.Start();
 		
+		// Save heuristic
+		this.heuristic = heuristic;
+		
 		// Create open list and initialize it with start node
 		Node node = new Node(StartGoalManager.startCol, StartGoalManager.startRow, 0, null);
-		NodeSortedList list = new NodeSortedList(node);
+		list = new NodeSortedList(node);
 		
-		// Prepare array with information if node was visited before
-		bool[,] wasNodeVisited = new bool[Map.width, Map.height];
-		wasNodeVisited[StartGoalManager.startCol, StartGoalManager.startRow] = true;
+		// Prepare array with information of previously visited nodes
+		nodesVisited = new Node[Map.width, Map.height];
+		nodesVisited[StartGoalManager.startCol, StartGoalManager.startRow] = node;
 		
 		// Prepare variables to store result
-		int nodesToAnalyze = 0;
+		nodesToAnalyze = 0;
 		int nodesAnalyzed = 0;
 		bool pathFound = false;
 		string resultMessage = "Path not found";
 		
-		// Prepare variables that will hold new nodes' coordinates
-		int x, y;
+		// Prepare variable that will hold new nodes' coordinates
+		int y;
 
 		// This counter will secure loop to run infinitely
 		int securityCounter = 0;
@@ -89,62 +150,19 @@ public class AStar : Algorithm
 				
 				// Check NORTH-WEST
 				if (canGoLeft)
-				{
-					// Calculate X coordinate
-					x = node.x - 1;
-
-					// If can expand in that direction, do it
-					if (wasNodeVisited[x, y] == false && Map.map[y, x] == FREE)
-					{
-						list.Add(new Node(x, y, node, heuristic));
-						wasNodeVisited[x, y] = true;
-						nodesToAnalyze++;
-						Displayer.Instance.PaintPath(x, y, Displayer.Instance.toAnalyzeColor);
-					}
-				}
+					TryToExpand(node.x - 1, y, node);
 				
 				// Check NORTH
-				// If can expand in that direction, do it
-				if (wasNodeVisited[node.x, y] == false && Map.map[y, node.x] == FREE)
-				{
-					list.Add(new Node(node.x, y, node, heuristic));
-					wasNodeVisited[node.x, y] = true;
-					nodesToAnalyze++;
-					Displayer.Instance.PaintPath(node.x, y, Displayer.Instance.toAnalyzeColor);
-				}
+				TryToExpand(node.x, y, node);
 				
 				// Check NORTH-EAST
 				if (canGoRight)
-				{
-					// Calculate X coordinate
-					x = node.x + 1;
-					
-					// If can expand in that direction, do it
-					if (wasNodeVisited[x, y] == false && Map.map[y, x] == FREE)
-					{
-						list.Add(new Node(x, y, node, heuristic));
-						wasNodeVisited[x, y] = true;
-						nodesToAnalyze++;
-						Displayer.Instance.PaintPath(x, y, Displayer.Instance.toAnalyzeColor);
-					}
-				}
+					TryToExpand(node.x + 1, y, node);
 			}
 			
 			// Check EAST
 			if (canGoRight)
-			{
-				// Calculate X coordinate
-				x = node.x + 1;
-				
-				// If can expand in that direction, do it
-				if (wasNodeVisited[x, node.y] == false && Map.map[node.y, x] == FREE)
-				{
-					list.Add(new Node(x, node.y, node, heuristic));
-					wasNodeVisited[x, node.y] = true;
-					nodesToAnalyze++;
-					Displayer.Instance.PaintPath(x, node.y, Displayer.Instance.toAnalyzeColor);
-				}
-			}
+				TryToExpand(node.x + 1, node.y, node);
 			
 			// Chceck SOUTH DIRECTIONS
 			if (canGoDown)
@@ -154,62 +172,19 @@ public class AStar : Algorithm
 				
 				// Check SOUTH-EAST
 				if (canGoRight)
-				{
-					// Calculate X coordinate
-					x = node.x + 1;
+					TryToExpand(node.x + 1, y, node);
 					
-					// If can expand in that direction, do it
-					if (wasNodeVisited[x, y] == false && Map.map[y, x] == FREE)
-					{
-						list.Add(new Node(x, y, node, heuristic));
-						wasNodeVisited[x, y] = true;
-						nodesToAnalyze++;
-						Displayer.Instance.PaintPath(x, y, Displayer.Instance.toAnalyzeColor);
-					}
-				}
-				
 				// Check SOUTH
-				// If can expand in that direction, do it
-				if (wasNodeVisited[node.x, y] == false && Map.map[y, node.x] == FREE)
-				{
-					list.Add(new Node(node.x, y, node, heuristic));
-					wasNodeVisited[node.x, y] = true;
-					nodesToAnalyze++;
-					Displayer.Instance.PaintPath(node.x, y, Displayer.Instance.toAnalyzeColor);
-				}
-				
+				TryToExpand(node.x, y, node);
+
 				// Check SOUTH-WEST
 				if (canGoLeft)
-				{
-					// Calculate X coordinate
-					x = node.x - 1;
-					
-					// If can expand in that direction, do it
-					if (wasNodeVisited[x, y] == false && Map.map[y, x] == FREE)
-					{
-						list.Add(new Node(x, y, node, heuristic));
-						wasNodeVisited[x, y] = true;
-						nodesToAnalyze++;
-						Displayer.Instance.PaintPath(x, y, Displayer.Instance.toAnalyzeColor);
-					}
-				}
+					TryToExpand(node.x - 1, y, node);
 			}
 			
 			// Check WEST
 			if (canGoLeft)
-			{
-				// Calculate X coordinate
-				x = node.x - 1;
-				
-				// If can expand in that direction, do it
-				if (wasNodeVisited[x, node.y] == false && Map.map[node.y, x] == FREE)
-				{
-					list.Add(new Node(x, node.y, node, heuristic));
-					wasNodeVisited[x, node.y] = true;
-					nodesToAnalyze++;
-					Displayer.Instance.PaintPath(x, node.y, Displayer.Instance.toAnalyzeColor);
-				}
-			}
+				TryToExpand(node.x - 1, node.y, node);
 			
 			// Expanded in all possible directions
 			// Sort list to put newly added nodes in order
@@ -219,17 +194,20 @@ public class AStar : Algorithm
 			Displayer.Instance.PaintPath(node.x, node.y, Displayer.Instance.analyzedColor);
 			
 			// If solver is supposed to be animated, pause it for some time
-			// Pause only every 10 iterations, as doing it every frame will be slow, even with skipping only one frame
-			if (Solver.animateSolvingProcess && securityCounter % 10 == 0)
+			if (Solver.animateSolvingProcess)
 			{
-				// Pause timer
-				timer.Stop();
-				
-				// Pause program for a short duration
-				yield return new WaitForSeconds(Solver.delay);
-				
-				// Resume timer
-				timer.Start();
+				// If delay is small enough, animate only every 10th frame, otherwise even one frame delay will take long
+				if (Solver.delay > 0.2f || securityCounter % 10 == 0)
+				{
+					// Pause timer
+					timer.Stop();
+					
+					// Pause program for a short duration
+					yield return new WaitForSeconds(Solver.delay);
+					
+					// Resume timer
+					timer.Start();
+				}
 			}
 		}
 		

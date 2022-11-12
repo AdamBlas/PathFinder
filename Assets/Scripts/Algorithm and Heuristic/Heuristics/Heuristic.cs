@@ -22,35 +22,61 @@ public abstract class Heuristic
 	
 	
 	
+	/// <summary>
+	/// Calculates passage cost for given parameters
+	/// </summary>
+	/// <param name="x"> X coordinate of the node </param>
+	/// <param name="y"> Y coordinate of the node </param>
+	/// <param name="parentNode"> Parent node </param>
+	/// <returns> Cost of the passage for given parameters </returns>
+	public abstract float GetPassageCost(int x, int y, Node parentNode);
 	
 	/// <summary>
-	/// Calculates node's cost
+	/// Calculates goal bounding's strength for given parameters
+	/// </summary>
+	/// <param name="x"> X coordinate of the node </param>
+	/// <param name="y"> Y coordinate of the node </param>
+	/// <param name="parentNode"> Parent node </param>
+	/// <returns> Goal bounding's strength </returns>
+	public float GetGoalBoundingStrength(int x, int y, Node parentNode)
+	{
+		// Calculate angle to the target
+		Vector2 fromParent = new Vector2(x - parentNode.x, y - parentNode.y);
+		Vector2 toGoal = new Vector2(StartGoalManager.goalCol - parentNode.x, StartGoalManager.goalRow - parentNode.y);
+		float angle = Vector2.Angle(fromParent, toGoal);
+		
+		// Return goal bounding strength
+		return goalBoundingSines[(int)angle];
+	}
+	
+	/// <summary>
+	/// Calculates costs for given parameters
+	/// </summary>
+	/// <param name="x"> X coordinate of the node </param>
+	/// <param name="y"> Y coordinate of the node </param>
+	/// <param name="parentNode"> Parent node </param>
+	/// <param name="baseCost"> Base cost of the node </param>
+	/// <param name="goalBoundingCost"> Cost of the node increased by goal bounding </param>
+	public void GetCosts(int x, int y, Node parentNode, out float baseCost, out float goalBoundingCost)
+	{
+		// Get node's base cost
+		float passageCost = GetPassageCost(x, y, parentNode);
+		baseCost = parentNode.baseCost + passageCost;
+		
+		// Check if goal bounding should be applied
+		if (GoalBoundingManager.shouldApply)
+			goalBoundingCost = baseCost + passageCost * GetGoalBoundingStrength(x, y, parentNode);
+		else
+			goalBoundingCost = baseCost;
+	}
+	
+	/// <summary>
+	/// Calculates node's cost and applies it to that node
 	/// </summary>
 	/// <param name="node"> Node to calculate cost </param>
-	public abstract void CalculateCost(Node node);
-	
-	/// <summary>
-	/// Applies goal bounding to the node's cost
-	/// </summary>
-	/// <param name="node"> Node for which goal bounding should be applied </param>
-	protected void ApplyGoalBounding(Node node)
+	public void CalculateCost(Node node)
 	{
-		// Apply goal bounging if neccesary
-		if (GoalBoundingManager.shouldApply)
-		{
-			// Calculate angle to the target
-			// Vector2 fromParent = new Vector2(node.x - node.parentNode.x, node.y - node.parentNode.y);
-			Vector2 fromStart = new Vector2(node.x - StartGoalManager.startCol, node.y - StartGoalManager.startRow);
-			Vector2 toGoal = new Vector3(StartGoalManager.goalCol - node.parentNode.x, StartGoalManager.goalRow - node.parentNode.y);
-			float angle = Vector2.Angle(fromStart, toGoal);
-			
-			// Increase cost based on precalculated goal bounding value
-			node.goalBoundCost = node.baseCost + node.baseCost * goalBoundingSines[(int)angle];
-		}
-		else
-		{
-			// No goal bounding should be applied, just copy value
-			node.goalBoundCost = node.baseCost;
-		}
+		// Get costs of the node
+		GetCosts(node.x, node.y, node.parentNode, out node.baseCost, out node.goalBoundCost);
 	}
 }

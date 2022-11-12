@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class GoalBoundingManager : MonoBehaviour
 {
 	[Tooltip("Singleton")]
-	static GoalBoundingManager Instance;
+	public static GoalBoundingManager Instance;
 	
 	[Tooltip("Slider to get value from")]
 	public Slider slider;
