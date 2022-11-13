@@ -88,6 +88,33 @@ public class Node : System.IComparable<Node>
 		return -1;
 	}
 	
+	/// <summary>
+	/// Prints list of coords that correspond to node's path
+	/// </summary>
+	/// <returns></returns>
+	public string PrintPath()
+	{
+		// Create result string builder
+		System.Text.StringBuilder sb = new System.Text.StringBuilder();
+		
+		// For every node in path, add its coords to the result
+		Node node = this;
+		while (node != null)
+		{
+			// Add coords to string
+			sb.Append("(X " + node.x + " | Y " + node.y + ") -> ");
+			
+			// Switch node
+			node = node.parentNode;
+		}
+		
+		// Append end message
+		sb.Append("END");
+		
+		// Return final result
+		return sb.ToString();
+	}
+	
 	public override string ToString()
 	{
 		return "X=" + x + ", Y=" + y + ", Base cost=" + baseCost + ", GoalBound cost=" + goalBoundCost + ", Parent={ " + (parentNode == null ? "NULL" : ("X=" + parentNode.x + ", Y=" + parentNode.y)) + " }";

@@ -13,6 +13,26 @@ public abstract class Algorithm
 	[Tooltip("Heuristics available for this algorithm")]
 	public Heuristic[] heuristics;
 	
+	[Tooltip("Array of visited nodes")]
+	public Node[,] nodesVisited;
+	
+	[Tooltip("List of nodes to analyze")]
+	public NodeSortedList list;
+	
+	[Tooltip("Selected heursitic")]
+	public Heuristic heuristic;
+	
+	[Tooltip("Amount of nodes analyzed")]
+	public int nodesAnalyzed;
+	
+	[Tooltip("Amount of nodes to analyze")]
+	public int nodesToAnalyze;
+	
+	[Tooltip("Nodes to reanalyze due to cost overwriting")]
+	public int nodesToReanalyze;
+	
+	
+	
 	
 	
 	

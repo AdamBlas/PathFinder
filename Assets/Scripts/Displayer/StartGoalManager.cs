@@ -169,7 +169,7 @@ public class StartGoalManager : MonoBehaviour
 	/// Calculates coordinates of the pixel that cursor is hovering
 	/// </summary>
 	/// <returns> Coords of the pixel cursor is hovering </returns>
-	Vector2Int? GetPixelCoordsBasedOnCursor()
+	public Vector2Int? GetPixelCoordsBasedOnCursor()
 	{
 		// Get map's corners
 		Vector3[] corners = new Vector3[4];

@@ -5,21 +5,6 @@ using static NodeType;
 
 public class AStar : Algorithm
 {
-	[Tooltip("Array of visited nodes")]
-	Node[,] nodesVisited;
-	
-	[Tooltip("List of nodes to analyze")]
-	NodeSortedList list;
-	
-	[Tooltip("Selected heursitic")]
-	Heuristic heuristic;
-	
-	[Tooltip("Amount of nodes to analyze")]
-	int nodesToAnalyze;
-	
-	
-	
-	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -45,16 +30,23 @@ public class AStar : Algorithm
 			if (CostOverwriteManager.shouldOverwrite)
 			{
 				// Calculate new costs
-				heuristic.GetCosts(x, y, node, out float baseCost, out float goalBoundingCost);
+				heuristic.GetCosts(x, y, node, out float baseCost, out float goalBoundCost);
 
-				// If new goal bounded cost is lower than previous one, overwrite costs and add node to list once again
-				if (goalBoundingCost < nodesVisited[x, y].goalBoundCost)
+				// If new goal bounded cost is lower than previous one, overwrite old values
+				if (baseCost + baseCost * CostOverwriteManager.errorMargin < nodesVisited[x, y].baseCost)
 				{
-					Debug.Log("Cost overwritten from " + nodesVisited[x, y].goalBoundCost + " to " + goalBoundingCost);
-					
+					// Overwrite costs
 					nodesVisited[x, y].baseCost = baseCost;
-					nodesVisited[x, y].goalBoundCost = goalBoundingCost;
-					list.Add(nodesVisited[x, y]);								
+					nodesVisited[x, y].goalBoundCost = goalBoundCost;
+					
+					// Overwrite parent
+					nodesVisited[x, y].parentNode = node;
+					
+					// Add that node to list once again
+					list.Add(nodesVisited[x, y]);
+					
+					// Increase counter
+					nodesToReanalyze++;
 				}
 			}
 		}
@@ -96,7 +88,8 @@ public class AStar : Algorithm
 		
 		// Prepare variables to store result
 		nodesToAnalyze = 0;
-		int nodesAnalyzed = 0;
+		nodesAnalyzed = 0;
+		nodesToReanalyze = 0;
 		bool pathFound = false;
 		string resultMessage = "Path not found";
 		
@@ -105,7 +98,7 @@ public class AStar : Algorithm
 
 		// This counter will secure loop to run infinitely
 		int securityCounter = 0;
-		int mapSize = Map.width * Map.height;
+		int mapSize = Map.width * Map.height * 2;
 
 		// Start loop
 		while (true)
@@ -232,7 +225,7 @@ public class AStar : Algorithm
 		PrintPath(node, out int nodesLength, out float pathLength);
 		
 		// Display statistics
-		ResultDisplayer.SetText(2, "TIME\n" + timer.Elapsed.TotalMilliseconds + " ms\n\nNODES\nTo Analyze:\t" + nodesToAnalyze + "\nAnalyzed:\t" + nodesAnalyzed);
+		ResultDisplayer.SetText(2, "TIME\n" + timer.Elapsed.TotalMilliseconds + " ms\n\nNODES\nTo Analyze:\t" + nodesToAnalyze + "\nAnalyzed:\t" + nodesAnalyzed + "\nAlocated:\t" + (nodesAnalyzed - nodesToReanalyze));
 		ResultDisplayer.SetText(3, "LENGTH\nNodes:\t" + nodesLength + "\nDistance:\t" + pathLength.ToString("f2"));
 	}
 }

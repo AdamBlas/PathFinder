@@ -65,7 +65,7 @@ public abstract class Heuristic
 		
 		// Check if goal bounding should be applied
 		if (GoalBoundingManager.shouldApply)
-			goalBoundingCost = baseCost + passageCost * GetGoalBoundingStrength(x, y, parentNode);
+			goalBoundingCost = baseCost + baseCost * GetGoalBoundingStrength(x, y, parentNode);
 		else
 			goalBoundingCost = baseCost;
 	}

@@ -8,8 +8,14 @@ public class CostOverwriteManager : MonoBehaviour
 	[Tooltip("Toggle to get value from")]
 	public Toggle toggle;
 	
+	[Tooltip("Slider to get error margin from")]
+	public Slider slider;
+	
 	[Tooltip("Flag indicating whether or not cost should be overwritten")]
-	public static bool shouldOverwrite;
+	public static bool shouldOverwrite = true;
+	
+	[Tooltip("Goal Bounding Error Margin")]
+	public static float errorMargin;
 	
 	
 	
@@ -21,11 +27,11 @@ public class CostOverwriteManager : MonoBehaviour
 	{
 		// Subscribe events
 		toggle.onValueChanged.AddListener(UpdateOverwriterStatus);
+		slider.onValueChanged.AddListener(UpdateErrorMargin);
 		GoalBoundingManager.Instance.slider.onValueChanged.AddListener((value) => SetInteraction(value != 0));
 		
 		// Initialize state
 		SetInteraction(GoalBoundingManager.strength != 0);
-		
 	}
 	
 	/// <summary>
@@ -50,5 +56,14 @@ public class CostOverwriteManager : MonoBehaviour
 			shouldOverwrite = false;
 		else
 			shouldOverwrite = toggle.isOn;
+	}
+	
+	/// <summary>
+	/// Updates error margin's value
+	/// </summary>
+	public void UpdateErrorMargin(float value)
+	{
+		// Update error margin
+		errorMargin = value;
 	}
 }
