@@ -33,7 +33,7 @@ public class AStar : Algorithm
 				heuristic.GetCosts(x, y, node, out float baseCost, out float goalBoundCost);
 
 				// If new goal bounded cost is lower than previous one, overwrite old values
-				if (baseCost + baseCost * CostOverwriteManager.errorMargin < nodesVisited[x, y].baseCost)
+				if (baseCost * CostOverwriteManager.errorMargin < nodesVisited[x, y].baseCost)
 				{
 					// Overwrite costs
 					nodesVisited[x, y].baseCost = baseCost;

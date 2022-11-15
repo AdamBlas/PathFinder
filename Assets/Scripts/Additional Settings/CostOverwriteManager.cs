@@ -64,6 +64,7 @@ public class CostOverwriteManager : MonoBehaviour
 	public void UpdateErrorMargin(float value)
 	{
 		// Update error margin
-		errorMargin = value;
+		// Increase by 1 so that you can multiply by that value
+		errorMargin = 1 + value;
 	}
 }

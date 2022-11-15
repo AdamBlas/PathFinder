@@ -49,8 +49,17 @@ public class HPAStar : Algorithm
 	[Tooltip("Final chunk in the chunk path")]
 	Chunk finalChunk;
 	
+	[Tooltip("Chunks grid")]
+	Chunk[,] grid;
+	
+	[Tooltip("Amount of chunks to analyze by algorithm")]
+	int amountOfChunksToAnalyze;
+	
 	[Tooltip("Amount of chunks analyzed by algorithm")]
 	int amountOfChunksAnalyzed;
+	
+	[Tooltip("Amount of chunks with overwritten cost and reanalyzed")]
+	int amountOfChunksReanalyzed;
 	
 	[Tooltip("Time required for finding path inside chunk grid")]
 	float timeToFindPathInChunkGrid;
@@ -63,6 +72,9 @@ public class HPAStar : Algorithm
 	
 	[Tooltip("Time required for finding path inside chunks")]
 	float timeToFindFinalPath;
+	
+	[Tooltip("Array of already visited chunks")]
+	Array2D<Chunk> visitedChunks;
 	
 	
 	
@@ -90,7 +102,7 @@ public class HPAStar : Algorithm
 		timer.Start();
 		
 		// Create chunk grid
-		Chunk[,] grid = CreateGrid(out int width, out int height);
+		grid = CreateGrid(out int width, out int height);
 
 		// Get precalculation time
 		timer.Stop();		
@@ -515,6 +527,55 @@ public class HPAStar : Algorithm
 	}
 	
 	/// <summary>
+	/// Tries to expand chunk in given direction
+	/// </summary>
+	void TryToExpandChunk(int gridX, int gridY, bool passageFlag, Chunk chunk)
+	{
+		// Check if can expand in that direction
+		if (passageFlag == false)
+			return;
+			
+		// Check if chunk was already visited
+		if (visitedChunks[gridX, gridY] != null)
+		{
+			// Chunk was visited, check if cost overwrite should be applied
+			if (CostOverwriteManager.shouldOverwrite)
+			{
+				// Calculate new costs for the chunk
+				heuristic.GetCosts(gridX * ChunkSize, gridY * ChunkSize, chunk, out float baseCost, out float goalBoundCost);
+				
+				// If new cost is inside error margin, update it
+				if (baseCost * CostOverwriteManager.errorMargin < visitedChunks[gridX, gridY].baseCost)
+				{
+					// Overwrite costs
+					visitedChunks[gridX, gridY].baseCost = baseCost;
+					visitedChunks[gridX, gridY].goalBoundCost = goalBoundCost;
+					
+					// Overwrite parent
+					nodesVisited[gridX, gridY].parentNode = chunk;
+					
+					// Add that chunk to list once again
+					list.Add(visitedChunks[gridX, gridY]);
+					
+					// Increase counter
+					amountOfChunksReanalyzed++;
+				}
+			}
+		}
+		else
+		{
+			// Chunk wasn't visited before, add it to list
+			list.Add(grid[gridX, gridY]);
+			
+			// Mark spot as visited
+			visitedChunks[gridX, gridY] = grid[gridX, gridY];
+			
+			// Increase amount of chunks to analyze
+			amountOfChunksToAnalyze++;
+		}
+	}
+	
+	/// <summary>
 	/// Applies A* on chunks' grid
 	/// </summary>
 	/// <param name="grid"> Chunks' map array </param>
@@ -539,11 +600,11 @@ public class HPAStar : Algorithm
 		Chunk chunk = grid[startChunkX, startChunkY];
 		
 		// Create and initialize list
-		NodeSortedList list = new NodeSortedList(chunk);
+		list = new NodeSortedList(chunk);
 		
 		// Prepare lookup table to check if chunk was already visited
-		var wasChunkVisited = new Array2D<bool>(width, height);
-		wasChunkVisited[startChunkX, startChunkY] = true;
+		visitedChunks = new Array2D<Chunk>(width, height);
+		visitedChunks[startChunkX, startChunkY] = chunk;
 		
 		// Prepare security counter
 		int securityCounter = 0;
@@ -552,6 +613,7 @@ public class HPAStar : Algorithm
 		// Prepare variable that will store result
 		bool pathFound = false;
 		amountOfChunksAnalyzed = 0;
+		amountOfChunksReanalyzed = 0;
 		
 		// Start A* loop		
 		while (list.count != 0)
@@ -588,9 +650,11 @@ public class HPAStar : Algorithm
 			// Do it only if you can get to that chunk
 			
 			// Check NORTH neighbour
+			TryToExpandChunk(gridX, gridY + 1, chunk.canGoUp.Value, chunk);
+			/*
 			if (chunk.canGoUp.Value && wasChunkVisited[gridX, gridY + 1] == false)
 			{
-				// Get neighbout chunk
+				// Get neighbour chunk
 				Chunk newChunk = grid[gridX, gridY + 1];
 				
 				// Set chunk's parent
@@ -607,9 +671,11 @@ public class HPAStar : Algorithm
 				
 				// Paint chunk
 				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}
+			}*/
 			
 			// Check NORTH-EAST neighbour
+			TryToExpandChunk(gridX + 1, gridY + 1, chunk.canGoUpRight.Value, chunk);
+			/*
 			if (chunk.canGoUpRight.Value && wasChunkVisited[gridX + 1, gridY + 1] == false)
 			{
 				// Get neighbout chunk
@@ -629,9 +695,11 @@ public class HPAStar : Algorithm
 				
 				// Paint chunk
 				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}
+			}*/
 			
 			// Check EAST
+			TryToExpandChunk(gridX + 1, gridY, chunk.canGoRight.Value, chunk);
+			/*
 			if (chunk.canGoRight.Value && wasChunkVisited[gridX + 1, gridY] == false)
 			{
 				// Get neighbout chunk
@@ -651,9 +719,11 @@ public class HPAStar : Algorithm
 				
 				// Paint chunk
 				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}
+			}*/
 			
 			// Check SOUTH-EAST
+			TryToExpandChunk(gridX + 1, gridY - 1, chunk.canGoDownRight.Value, chunk);
+			/*
 			if (chunk.canGoDownRight.Value && wasChunkVisited[gridX + 1, gridY - 1] == false)
 			{
 				// Get neighbout chunk
@@ -673,9 +743,11 @@ public class HPAStar : Algorithm
 				
 				// Paint chunk
 				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}
+			}*/
 			
 			// Check SOUTH
+			TryToExpandChunk(gridX, gridY - 1, chunk.canGoDown.Value, chunk);
+			/*
 			if (chunk.canGoDown.Value && wasChunkVisited[gridX, gridY - 1] == false)
 			{
 				// Get neighbout chunk
@@ -695,9 +767,11 @@ public class HPAStar : Algorithm
 				
 				// Paint chunk
 				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}
+			}*/
 			
 			// Check SOUTH-WEST
+			TryToExpandChunk(gridX - 1, gridY - 1, chunk.canGoDownLeft.Value, chunk);
+			/*
 			if (chunk.canGoDownLeft.Value && wasChunkVisited[gridX - 1, gridY - 1] == false)
 			{
 				// Get neighbout chunk
@@ -717,9 +791,11 @@ public class HPAStar : Algorithm
 				
 				// Paint chunk
 				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}
+			}*/
 			
 			// Check WEST
+			TryToExpandChunk(gridX - 1, gridY, chunk.canGoLeft.Value, chunk);
+			/*
 			if (chunk.canGoLeft.Value && wasChunkVisited[gridX - 1, gridY] == false)
 			{
 				// Get neighbout chunk
@@ -739,9 +815,11 @@ public class HPAStar : Algorithm
 				
 				// Paint chunk
 				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}
+			}*/
 			
 			// Check NORTH-WEST
+			TryToExpandChunk(gridX - 1, gridY + 1, chunk.canGoUpLeft.Value, chunk);
+			/*
 			if (chunk.canGoUpLeft.Value && wasChunkVisited[gridX - 1, gridY + 1] == false)
 			{
 				// Get neighbout chunk
@@ -761,7 +839,7 @@ public class HPAStar : Algorithm
 				
 				// Paint chunk
 				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}
+			}*/
 			
 			// Sort list to include all newly added chunks
 			list.Sort();
