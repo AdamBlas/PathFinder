@@ -647,199 +647,30 @@ public class HPAStar : Algorithm
 			}
 			
 			// Add neighbour chunks to the list
-			// Do it only if you can get to that chunk
 			
 			// Check NORTH neighbour
 			TryToExpandChunk(gridX, gridY + 1, chunk.canGoUp.Value, chunk);
-			/*
-			if (chunk.canGoUp.Value && wasChunkVisited[gridX, gridY + 1] == false)
-			{
-				// Get neighbour chunk
-				Chunk newChunk = grid[gridX, gridY + 1];
-				
-				// Set chunk's parent
-				newChunk.parentNode = chunk;
-				
-				// Calculate its cost
-				heuristic.CalculateCost(newChunk);
-				
-				// Mark chunk as visited
-				wasChunkVisited[gridX, gridY + 1] = true;
-				
-				// Add chunk to list
-				list.Add(newChunk);
-				
-				// Paint chunk
-				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}*/
 			
 			// Check NORTH-EAST neighbour
 			TryToExpandChunk(gridX + 1, gridY + 1, chunk.canGoUpRight.Value, chunk);
-			/*
-			if (chunk.canGoUpRight.Value && wasChunkVisited[gridX + 1, gridY + 1] == false)
-			{
-				// Get neighbout chunk
-				Chunk newChunk = grid[gridX + 1, gridY + 1];
-				
-				// Set chunk's parent
-				newChunk.parentNode = chunk;
-				
-				// Calculate its cost
-				heuristic.CalculateCost(newChunk);
-				
-				// Mark chunk as visited
-				wasChunkVisited[gridX + 1, gridY + 1] = true;
-				
-				// Add chunk to list
-				list.Add(newChunk);
-				
-				// Paint chunk
-				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}*/
 			
 			// Check EAST
 			TryToExpandChunk(gridX + 1, gridY, chunk.canGoRight.Value, chunk);
-			/*
-			if (chunk.canGoRight.Value && wasChunkVisited[gridX + 1, gridY] == false)
-			{
-				// Get neighbout chunk
-				Chunk newChunk = grid[gridX + 1, gridY];
-				
-				// Set chunk's parent
-				newChunk.parentNode = chunk;
-				
-				// Calculate its cost
-				heuristic.CalculateCost(newChunk);
-				
-				// Mark chunk as visited
-				wasChunkVisited[gridX + 1, gridY] = true;
-				
-				// Add chunk to list
-				list.Add(newChunk);
-				
-				// Paint chunk
-				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}*/
 			
 			// Check SOUTH-EAST
 			TryToExpandChunk(gridX + 1, gridY - 1, chunk.canGoDownRight.Value, chunk);
-			/*
-			if (chunk.canGoDownRight.Value && wasChunkVisited[gridX + 1, gridY - 1] == false)
-			{
-				// Get neighbout chunk
-				Chunk newChunk = grid[gridX + 1, gridY - 1];
-				
-				// Set chunk's parent
-				newChunk.parentNode = chunk;
-				
-				// Calculate its cost
-				heuristic.CalculateCost(newChunk);
-				
-				// Mark chunk as visited
-				wasChunkVisited[gridX + 1, gridY - 1] = true;
-				
-				// Add chunk to list
-				list.Add(newChunk);
-				
-				// Paint chunk
-				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}*/
 			
 			// Check SOUTH
 			TryToExpandChunk(gridX, gridY - 1, chunk.canGoDown.Value, chunk);
-			/*
-			if (chunk.canGoDown.Value && wasChunkVisited[gridX, gridY - 1] == false)
-			{
-				// Get neighbout chunk
-				Chunk newChunk = grid[gridX, gridY - 1];
-				
-				// Set chunk's parent
-				newChunk.parentNode = chunk;
-				
-				// Calculate its cost
-				heuristic.CalculateCost(newChunk);
-				
-				// Mark chunk as visited
-				wasChunkVisited[gridX, gridY - 1] = true;
-				
-				// Add chunk to list
-				list.Add(newChunk);
-				
-				// Paint chunk
-				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}*/
 			
 			// Check SOUTH-WEST
 			TryToExpandChunk(gridX - 1, gridY - 1, chunk.canGoDownLeft.Value, chunk);
-			/*
-			if (chunk.canGoDownLeft.Value && wasChunkVisited[gridX - 1, gridY - 1] == false)
-			{
-				// Get neighbout chunk
-				Chunk newChunk = grid[gridX - 1, gridY - 1];
-				
-				// Set chunk's parent
-				newChunk.parentNode = chunk;
-				
-				// Calculate its cost
-				heuristic.CalculateCost(newChunk);
-				
-				// Mark chunk as visited
-				wasChunkVisited[gridX - 1, gridY - 1] = true;
-				
-				// Add chunk to list
-				list.Add(newChunk);
-				
-				// Paint chunk
-				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}*/
 			
 			// Check WEST
 			TryToExpandChunk(gridX - 1, gridY, chunk.canGoLeft.Value, chunk);
-			/*
-			if (chunk.canGoLeft.Value && wasChunkVisited[gridX - 1, gridY] == false)
-			{
-				// Get neighbout chunk
-				Chunk newChunk = grid[gridX - 1, gridY];
-				
-				// Set chunk's parent
-				newChunk.parentNode = chunk;
-				
-				// Calculate its cost
-				heuristic.CalculateCost(newChunk);
-				
-				// Mark chunk as visited
-				wasChunkVisited[gridX - 1, gridY] = true;
-				
-				// Add chunk to list
-				list.Add(newChunk);
-				
-				// Paint chunk
-				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}*/
 			
 			// Check NORTH-WEST
 			TryToExpandChunk(gridX - 1, gridY + 1, chunk.canGoUpLeft.Value, chunk);
-			/*
-			if (chunk.canGoUpLeft.Value && wasChunkVisited[gridX - 1, gridY + 1] == false)
-			{
-				// Get neighbout chunk
-				Chunk newChunk = grid[gridX - 1, gridY + 1];
-				
-				// Set chunk's parent
-				newChunk.parentNode = chunk;
-				
-				// Calculate its cost
-				heuristic.CalculateCost(newChunk);
-				
-				// Mark chunk as visited
-				wasChunkVisited[gridX - 1, gridY + 1] = true;
-				
-				// Add chunk to list
-				list.Add(newChunk);
-				
-				// Paint chunk
-				PaintChunk(newChunk, Displayer.Instance.toAnalyzeColor);
-			}*/
 			
 			// Sort list to include all newly added chunks
 			list.Sort();

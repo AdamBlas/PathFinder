@@ -120,12 +120,20 @@ public class AStar : Algorithm
 			nodesAnalyzed++;
 			
 			// Check if this is goal node
+			Debug.Log("Checking end condition...");
+			yield return null;
 			if (node.x == StartGoalManager.goalCol && node.y == StartGoalManager.goalRow)
 			{
+				Debug.Log("End condition met!");
+				yield return null;
+				
 				pathFound = true;
 				resultMessage = "Path was found";
+				
 				break;
 			}
+			Debug.Log("End condition NOT met");
+			yield return null;
 			
 			// Check if we can go in given direction
 			bool canGoUp = node.y != 0;

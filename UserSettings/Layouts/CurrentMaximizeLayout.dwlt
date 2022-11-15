@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Children:
   - {fileID: 3}
-  - {fileID: 23}
+  - {fileID: 20}
   m_Position:
     serializedVersion: 2
     x: 0
@@ -24,7 +24,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 200}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 78
+  controlID: 74
 --- !u!114 &2
 MonoBehaviour:
   m_ObjectHideFlags: 61
@@ -40,7 +40,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 4000, y: 4000}
   m_TitleContent:
-    m_Text: HPAStar.cs
+    m_Text: AStar.cs
     m_Image: {fileID: 0}
     m_Tooltip: in Scripts/Algorithm and Heuristic/Algorithms/
   m_Pos:
@@ -53,18 +53,18 @@ MonoBehaviour:
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
     m_SaveData: []
-  targetAsset: {fileID: 11500000, guid: 36848b4e4382e314e93927e97c0044fd, type: 3}
-  targetAssetGuid: 36848b4e4382e314e93927e97c0044fd
+  targetAsset: {fileID: 11500000, guid: a2cd54014b5b6f046997cb047fc992ec, type: 3}
+  targetAssetGuid: a2cd54014b5b6f046997cb047fc992ec
   textEditor:
-    scrollPosition: {x: 0, y: 0}
-    scrollPositionLine: 0
-    scrollPositionOffset: 0
+    scrollPosition: {x: 0, y: 291}
+    scrollPositionLine: 20
+    scrollPositionOffset: 3
     searchString: 
     caretPosition:
-      virtualColumn: 59
-      column: 59
-      characterIndex: 50
-      line: 182
+      virtualColumn: 38
+      column: 38
+      characterIndex: 29
+      line: 54
     _selectionStartPosition:
       virtualColumn: 0
       column: 0
@@ -77,9 +77,9 @@ MonoBehaviour:
     yLineOffsets: []
     codeViewRect:
       serializedVersion: 2
-      x: 44.8
-      y: 0
-      width: 847.60004
+      x: 37.6
+      y: 291
+      width: 854.80005
       height: 443.59998
     tokenTooltip: {fileID: 0}
     argumentsHint: {fileID: 0}
@@ -98,7 +98,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Children:
   - {fileID: 4}
-  - {fileID: 18}
+  - {fileID: 15}
   m_Position:
     serializedVersion: 2
     x: 0
@@ -108,7 +108,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 200}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 79
+  controlID: 75
 --- !u!114 &4
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -133,7 +133,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 80
+  controlID: 76
 --- !u!114 &5
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -181,7 +181,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 73.6
+    y: 19
     width: 241.4
     height: 504.59998
   m_ViewDataDictionary: {fileID: 0}
@@ -193,7 +193,7 @@ MonoBehaviour:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs: 
       m_LastClickedID: 0
-      m_ExpandedIDs: 10fbffff
+      m_ExpandedIDs: 2cfbffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -242,17 +242,14 @@ MonoBehaviour:
   m_Panes:
   - {fileID: 8}
   - {fileID: 9}
-  - {fileID: 2}
   - {fileID: 10}
   - {fileID: 11}
   - {fileID: 12}
   - {fileID: 13}
   - {fileID: 14}
-  - {fileID: 15}
-  - {fileID: 16}
-  - {fileID: 17}
-  m_Selected: 2
-  m_LastSelected: 3
+  - {fileID: 2}
+  m_Selected: 7
+  m_LastSelected: 7
 --- !u!114 &8
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -502,7 +499,7 @@ MonoBehaviour:
   m_Position:
     m_Target: {x: 4.4336143, y: -2.108289, z: 224.7877}
     speed: 2
-    m_Value: {x: 5.8691, y: -1.0070233, z: -9.995378}
+    m_Value: {x: 4.4336143, y: -2.108289, z: 224.7877}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -555,7 +552,7 @@ MonoBehaviour:
   m_Size:
     m_Target: 3.9384916
     speed: 2
-    m_Value: 3.2029948
+    m_Value: 3.9384916
   m_Ortho:
     m_Target: 1
     speed: 2
@@ -687,7 +684,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 4000, y: 4000}
   m_TitleContent:
-    m_Text: AStar.cs
+    m_Text: HPAStar.cs
     m_Image: {fileID: 0}
     m_Tooltip: in Scripts/Algorithm and Heuristic/Algorithms/
   m_Pos:
@@ -700,18 +697,18 @@ MonoBehaviour:
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
     m_SaveData: []
-  targetAsset: {fileID: 11500000, guid: a2cd54014b5b6f046997cb047fc992ec, type: 3}
-  targetAssetGuid: a2cd54014b5b6f046997cb047fc992ec
+  targetAsset: {fileID: 11500000, guid: 36848b4e4382e314e93927e97c0044fd, type: 3}
+  targetAssetGuid: 36848b4e4382e314e93927e97c0044fd
   textEditor:
-    scrollPosition: {x: 0, y: 2899}
-    scrollPositionLine: 201
-    scrollPositionOffset: 4.6000977
+    scrollPosition: {x: 0, y: 8078.409}
+    scrollPositionLine: 561
+    scrollPositionOffset: 0.009277344
     searchString: 
     caretPosition:
-      virtualColumn: 68
-      column: 68
-      characterIndex: 62
-      line: 223
+      virtualColumn: 5
+      column: 5
+      characterIndex: 2
+      line: 578
     _selectionStartPosition:
       virtualColumn: 0
       column: 0
@@ -724,191 +721,14 @@ MonoBehaviour:
     yLineOffsets: []
     codeViewRect:
       serializedVersion: 2
-      x: 37.6
-      y: 2899
-      width: 854.80005
+      x: 44.8
+      y: 8078.409
+      width: 847.60004
       height: 443.59998
     tokenTooltip: {fileID: 0}
     argumentsHint: {fileID: 0}
     collapsedRegions: []
 --- !u!114 &11
-MonoBehaviour:
-  m_ObjectHideFlags: 61
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 233c5be4b3c6a2f42af54a964d938960, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_MinSize: {x: 100, y: 100}
-  m_MaxSize: {x: 4000, y: 4000}
-  m_TitleContent:
-    m_Text: Heuristic.cs
-    m_Image: {fileID: 0}
-    m_Tooltip: in Scripts/Algorithm and Heuristic/Heuristics/
-  m_Pos:
-    serializedVersion: 2
-    x: 303
-    y: 73
-    width: 1141
-    height: 660
-  m_ViewDataDictionary: {fileID: 0}
-  m_OverlayCanvas:
-    m_LastAppliedPresetName: Default
-    m_SaveData: []
-  targetAsset: {fileID: 11500000, guid: afcbe762b4578aa48b4ca0de4236bd7c, type: 3}
-  targetAssetGuid: afcbe762b4578aa48b4ca0de4236bd7c
-  textEditor:
-    scrollPosition: {x: 0, y: 0}
-    scrollPositionLine: 0
-    scrollPositionOffset: 0
-    searchString: 
-    caretPosition:
-      virtualColumn: 17
-      column: 17
-      characterIndex: 14
-      line: 72
-    _selectionStartPosition:
-      virtualColumn: 0
-      column: 0
-      characterIndex: 0
-      line: 0
-    hasSelection: 0
-    hiddenLinesStart: 
-    hiddenLinesCount: 
-    lineNumbersOffset: 0
-    yLineOffsets: []
-    codeViewRect:
-      serializedVersion: 2
-      x: 32
-      y: 0
-      width: 1089
-      height: 599
-    tokenTooltip: {fileID: 0}
-    argumentsHint: {fileID: 0}
-    collapsedRegions: []
---- !u!114 &12
-MonoBehaviour:
-  m_ObjectHideFlags: 61
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 233c5be4b3c6a2f42af54a964d938960, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_MinSize: {x: 100, y: 100}
-  m_MaxSize: {x: 4000, y: 4000}
-  m_TitleContent:
-    m_Text: Manhattan.cs
-    m_Image: {fileID: 0}
-    m_Tooltip: in Scripts/Algorithm and Heuristic/Heuristics/
-  m_Pos:
-    serializedVersion: 2
-    x: 303
-    y: 73
-    width: 1141
-    height: 660
-  m_ViewDataDictionary: {fileID: 0}
-  m_OverlayCanvas:
-    m_LastAppliedPresetName: Default
-    m_SaveData: []
-  targetAsset: {fileID: 11500000, guid: 9552ebcc5fd8a9a419fca6c328d7aab2, type: 3}
-  targetAssetGuid: 9552ebcc5fd8a9a419fca6c328d7aab2
-  textEditor:
-    scrollPosition: {x: 0, y: 33}
-    scrollPositionLine: 2
-    scrollPositionOffset: 3
-    searchString: 
-    caretPosition:
-      virtualColumn: 22
-      column: 22
-      characterIndex: 19
-      line: 14
-    _selectionStartPosition:
-      virtualColumn: 0
-      column: 0
-      characterIndex: 0
-      line: 0
-    hasSelection: 0
-    hiddenLinesStart: 
-    hiddenLinesCount: 
-    lineNumbersOffset: 0
-    yLineOffsets: []
-    codeViewRect:
-      serializedVersion: 2
-      x: 32
-      y: 33
-      width: 1089
-      height: 599
-    tokenTooltip: {fileID: 0}
-    argumentsHint: {fileID: 0}
-    collapsedRegions: []
---- !u!114 &13
-MonoBehaviour:
-  m_ObjectHideFlags: 61
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 233c5be4b3c6a2f42af54a964d938960, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_MinSize: {x: 100, y: 100}
-  m_MaxSize: {x: 4000, y: 4000}
-  m_TitleContent:
-    m_Text: Dijkstra.cs
-    m_Image: {fileID: 0}
-    m_Tooltip: in Scripts/Algorithm and Heuristic/Heuristics/
-  m_Pos:
-    serializedVersion: 2
-    x: 303
-    y: 73
-    width: 1141
-    height: 660
-  m_ViewDataDictionary: {fileID: 0}
-  m_OverlayCanvas:
-    m_LastAppliedPresetName: Default
-    m_SaveData: []
-  targetAsset: {fileID: 11500000, guid: e0f30187973736948ab0874c37d79969, type: 3}
-  targetAssetGuid: e0f30187973736948ab0874c37d79969
-  textEditor:
-    scrollPosition: {x: 0, y: 33}
-    scrollPositionLine: 2
-    scrollPositionOffset: 3
-    searchString: 
-    caretPosition:
-      virtualColumn: 58
-      column: 58
-      characterIndex: 55
-      line: 31
-    _selectionStartPosition:
-      virtualColumn: 0
-      column: 0
-      characterIndex: 0
-      line: 0
-    hasSelection: 0
-    hiddenLinesStart: 
-    hiddenLinesCount: 
-    lineNumbersOffset: 0
-    yLineOffsets: []
-    codeViewRect:
-      serializedVersion: 2
-      x: 32
-      y: 33
-      width: 1089
-      height: 599
-    tokenTooltip: {fileID: 0}
-    argumentsHint: {fileID: 0}
-    collapsedRegions: []
---- !u!114 &14
 MonoBehaviour:
   m_ObjectHideFlags: 61
   m_CorrespondingSourceObject: {fileID: 0}
@@ -967,7 +787,7 @@ MonoBehaviour:
     tokenTooltip: {fileID: 0}
     argumentsHint: {fileID: 0}
     collapsedRegions: []
---- !u!114 &15
+--- !u!114 &12
 MonoBehaviour:
   m_ObjectHideFlags: 61
   m_CorrespondingSourceObject: {fileID: 0}
@@ -987,10 +807,10 @@ MonoBehaviour:
     m_Tooltip: in Scripts/Additional Settings/
   m_Pos:
     serializedVersion: 2
-    x: 303
-    y: 73
-    width: 1141
-    height: 660
+    x: 242.40001
+    y: 73.6
+    width: 912.4
+    height: 504.59998
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
@@ -998,15 +818,15 @@ MonoBehaviour:
   targetAsset: {fileID: 11500000, guid: 6b42a4563354f4645a5db4a391561b3d, type: 3}
   targetAssetGuid: 6b42a4563354f4645a5db4a391561b3d
   textEditor:
-    scrollPosition: {x: 0, y: 0}
-    scrollPositionLine: 0
-    scrollPositionOffset: 0
+    scrollPosition: {x: 0, y: 553.4}
+    scrollPositionLine: 38
+    scrollPositionOffset: 6.200012
     searchString: 
     caretPosition:
-      virtualColumn: 0
-      column: 0
-      characterIndex: 0
-      line: 11
+      virtualColumn: 63
+      column: 63
+      characterIndex: 57
+      line: 66
     _selectionStartPosition:
       virtualColumn: 0
       column: 0
@@ -1019,14 +839,14 @@ MonoBehaviour:
     yLineOffsets: []
     codeViewRect:
       serializedVersion: 2
-      x: 32
-      y: 0
-      width: 1089
-      height: 614
+      x: 30.4
+      y: 553.4
+      width: 862
+      height: 458.59998
     tokenTooltip: {fileID: 0}
     argumentsHint: {fileID: 0}
     collapsedRegions: []
---- !u!114 &16
+--- !u!114 &13
 MonoBehaviour:
   m_ObjectHideFlags: 61
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1085,7 +905,7 @@ MonoBehaviour:
     tokenTooltip: {fileID: 0}
     argumentsHint: {fileID: 0}
     collapsedRegions: []
---- !u!114 &17
+--- !u!114 &14
 MonoBehaviour:
   m_ObjectHideFlags: 61
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1144,7 +964,7 @@ MonoBehaviour:
     tokenTooltip: {fileID: 0}
     argumentsHint: {fileID: 0}
     collapsedRegions: []
---- !u!114 &18
+--- !u!114 &15
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1154,7 +974,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: ConsoleWindow
+  m_Name: FGConsole
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
@@ -1165,15 +985,15 @@ MonoBehaviour:
     height: 205.20001
   m_MinSize: {x: 101, y: 121}
   m_MaxSize: {x: 4001, y: 4021}
-  m_ActualView: {fileID: 20}
+  m_ActualView: {fileID: 18}
   m_Panes:
+  - {fileID: 16}
+  - {fileID: 17}
+  - {fileID: 18}
   - {fileID: 19}
-  - {fileID: 20}
-  - {fileID: 21}
-  - {fileID: 22}
-  m_Selected: 1
-  m_LastSelected: 0
---- !u!114 &19
+  m_Selected: 2
+  m_LastSelected: 1
+--- !u!114 &16
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1229,7 +1049,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: be650000
     m_LastClickedID: 26046
-    m_ExpandedIDs: 0000000058660000
+    m_ExpandedIDs: 0000000018660000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1257,7 +1077,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 0000000058660000
+    m_ExpandedIDs: 0000000018660000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1301,7 +1121,7 @@ MonoBehaviour:
       m_IsRenaming: 0
       m_OriginalEventType: 11
       m_IsRenamingFilename: 1
-      m_ClientGUIView: {fileID: 18}
+      m_ClientGUIView: {fileID: 15}
     m_CreateAssetUtility:
       m_EndAction: {fileID: 0}
       m_InstanceID: 0
@@ -1313,7 +1133,7 @@ MonoBehaviour:
     m_GridSize: 16
   m_SkipHiddenPackages: 0
   m_DirectoriesAreaWidth: 207
---- !u!114 &20
+--- !u!114 &17
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1341,7 +1161,7 @@ MonoBehaviour:
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
     m_SaveData: []
---- !u!114 &21
+--- !u!114 &18
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1363,13 +1183,13 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 599.2
-    width: 1146.2
+    width: 1155.8
     height: 184.20001
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
     m_SaveData: []
---- !u!114 &22
+--- !u!114 &19
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1496,7 +1316,7 @@ MonoBehaviour:
     assetGuid: 36848b4e4382e314e93927e97c0044fd
     assetPath: Assets/Scripts/Algorithm and Heuristic/Algorithms/HPAStar.cs
     fileName: HPAStar.cs
-    line: 196
+    line: 205
     characterIndex: 17
     length: 8
     trimOffset: 4
@@ -1512,7 +1332,7 @@ MonoBehaviour:
     assetGuid: 36848b4e4382e314e93927e97c0044fd
     assetPath: Assets/Scripts/Algorithm and Heuristic/Algorithms/HPAStar.cs
     fileName: HPAStar.cs
-    line: 196
+    line: 205
     characterIndex: 62
     length: 8
     trimOffset: 4
@@ -1724,7 +1544,7 @@ MonoBehaviour:
   filesCount: 10
   keepResults: 0
   groupByFile: 1
---- !u!114 &23
+--- !u!114 &20
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1734,7 +1554,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
+  m_Name: InspectorWindow
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
@@ -1745,12 +1565,12 @@ MonoBehaviour:
     height: 730.8
   m_MinSize: {x: 276, y: 71}
   m_MaxSize: {x: 4001, y: 4021}
-  m_ActualView: {fileID: 24}
+  m_ActualView: {fileID: 21}
   m_Panes:
-  - {fileID: 24}
+  - {fileID: 21}
   m_Selected: 0
   m_LastSelected: 0
---- !u!114 &24
+--- !u!114 &21
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
