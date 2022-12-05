@@ -12,7 +12,7 @@ public class ChunkSizeManager : MonoBehaviour
 	public Slider slider;
 	
 	[Tooltip("Size of the chunk")]
-	public static int ChunkSize;
+	public static ushort ChunkSize;
 	
 	
 	
@@ -29,7 +29,7 @@ public class ChunkSizeManager : MonoBehaviour
 		slider.onValueChanged.AddListener(UpdateSizeValue);
 		
 		// Initialize value
-		ChunkSize = (int)slider.value;
+		ChunkSize = (ushort)slider.value;
 	}
 	
 	/// <summary>
@@ -38,6 +38,6 @@ public class ChunkSizeManager : MonoBehaviour
 	void UpdateSizeValue(float value)
 	{
 		// Save value
-		ChunkSize = (int)value;
+		ChunkSize = (ushort)value;
 	}
 }

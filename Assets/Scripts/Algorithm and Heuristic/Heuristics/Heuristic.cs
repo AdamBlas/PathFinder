@@ -57,14 +57,14 @@ public abstract class Heuristic
 	/// <param name="parentNode"> Parent node </param>
 	/// <param name="baseCost"> Base cost of the node </param>
 	/// <param name="goalBoundingCost"> Cost of the node increased by goal bounding </param>
-	public void GetCosts(int x, int y, Node parentNode, out float baseCost, out float goalBoundingCost)
+	public void GetCosts(int x, int y, Node parentNode, out float baseCost, out float goalBoundingCost, bool applyGoalBounding = true)
 	{
 		// Get node's base cost
 		float passageCost = GetPassageCost(x, y, parentNode);
 		baseCost = parentNode.baseCost + passageCost;
 		
 		// Check if goal bounding should be applied
-		if (GoalBoundingManager.shouldApply)
+		if (GoalBoundingManager.shouldApply && applyGoalBounding)
 			goalBoundingCost = baseCost + baseCost * GetGoalBoundingStrength(x, y, parentNode);
 		else
 			goalBoundingCost = baseCost;
@@ -74,9 +74,9 @@ public abstract class Heuristic
 	/// Calculates node's cost and applies it to that node
 	/// </summary>
 	/// <param name="node"> Node to calculate cost </param>
-	public void CalculateCost(Node node)
+	public void CalculateCost(Node node, bool applyGoalBounding = true)
 	{
 		// Get costs of the node
-		GetCosts(node.x, node.y, node.parentNode, out node.baseCost, out node.goalBoundCost);
+		GetCosts(node.x, node.y, node.parentNode, out node.baseCost, out node.goalBoundCost, applyGoalBounding);
 	}
 }

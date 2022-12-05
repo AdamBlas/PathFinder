@@ -5,6 +5,9 @@ using UnityEngine.UI;
 
 public class Solver : MonoBehaviour
 {
+	[Tooltip("Singleton")]
+	public static Solver Instance;
+	
 	[Tooltip("Flag that switches between animation and instant mode")]
 	public static bool animateSolvingProcess;
 	
@@ -37,6 +40,9 @@ public class Solver : MonoBehaviour
 	// Awake is called when the script instance is being loaded.
 	protected void Awake()
 	{
+		// Create singleton
+		Instance = this;
+		
 		// Initialize buttons' states
 		ResumeSolver();
 		

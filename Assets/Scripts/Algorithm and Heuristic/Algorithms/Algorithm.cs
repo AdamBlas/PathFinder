@@ -24,12 +24,7 @@ public abstract class Algorithm
 	
 	[Tooltip("Amount of nodes analyzed")]
 	public int nodesAnalyzed;
-	
-	[Tooltip("Amount of nodes to analyze")]
-	public int nodesToAnalyze;
-	
-	[Tooltip("Nodes to reanalyze due to cost overwriting")]
-	public int nodesToReanalyze;
+
 	
 	
 	

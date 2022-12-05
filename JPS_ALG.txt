@@ -1,0 +1,67 @@
+ValidDirLookUpTable
+	Traveling South: West, Southwest, South, Southeast, East
+	Traveling Southeast: South, Southeast, East
+	Traveling East: South, Southeast, East, Northeast, North
+	Traveling Northeast: East, Northeast, North
+	Traveling North: East, Northeast, North, Northwest, West
+	Traveling Northwest: North, Northwest, West
+	Traveling West: North, Northwest, West, Southwest, South
+	Traveling Southwest: West, Southwest, South
+while (!OpenList.IsEmpty())
+{
+	Node* curNode = OpenList.Pop();
+	Node* parentNode = curNode->parent;
+	
+	if (curNode == goalNode)
+		return PathFound;
+		
+	foreach (direction in ValidDirLookUpTable given parentNode)
+	{
+		Node* newSuccessor = NULL;
+		float givenCost;
+		
+		if (direction is cardinal && goal is in exact direction && DiffNodes(curNode, goalNode) <= abs(curNode->distances[direction]))
+		{
+			//Goal is closer than wall distance or
+			//closer than or equal to jump point distance
+			newSuccessor = goalNode;
+			givenCost = curNode->givenCost + DiffNodes(curNode, goalNode);
+		}
+		else if (direction is diagonal && goal is in general direction && (DiffNodesRow(curNode, goalNode) <= abs(curNode->distances[direction]) || (DiffNodesCol(curNode, goalNode) <= abs(curNode->distances[direction]))))
+		{
+			//Goal is closer or equal in either row or
+			//column than wall or jump point distance
+			//Create a target jump point
+			int minDiff = min(RowDiff(curNode, goalNode), ColDiff(curNode, goalNode));
+			newSuccessor = GetNode (curNode, minDiff, direction);
+			givenCost = curNode->givenCost + (SQRT2 * minDiff);
+		}
+		else if (curNode->distances[direction] > 0)
+		{
+			//Jump point in this direction
+			newSuccessor = GetNode(curNode, direction);
+			givenCost = DiffNodes(curNode, newSuccessor);
+			if (diagonal direction) {givenCost *= SQRT2;}
+			givenCost += curNode->givenCost;
+		}
+		//Traditional A* from this point
+		if (newSuccessor != NULL)
+		{
+			if (newSuccessor not on OpenList or ClosedList)
+			{
+				newSuccessor->parent = curNode;
+				newSuccessor->givenCost = givenCost;
+				newSuccessor->finalCost = givenCost + CalculateHeuristic(newSuccessor, goalNode);
+				OpenList.Push(newSuccessor);
+			}
+			else if(givenCost < newSuccessor->givenCost)
+			{
+				newSuccessor->parent = curNode;
+				newSuccessor->givenCost = givenCost;
+				newSuccessor->finalCost = givenCost + CalculateHeuristic(newSuccessor, goalNode);
+				OpenList.Update(newSuccessor);
+			}
+		}
+	}
+}
+return NoPathExists;

@@ -49,7 +49,7 @@ public class Displayer : MonoBehaviour
 	
 	[Tooltip("Texture of the map hover layer")]
 	Texture2D hoverTexture;
-	
+
 	[Tooltip("Flag indicating whether or not mouse cursor is inside mask")]
 	public static bool isMouseInside;
 	
@@ -107,10 +107,10 @@ public class Displayer : MonoBehaviour
 		ClearTexture(pathTexture);
 		ClearTexture(startGoalTexture);
 		
-		// Pain every pixel on the map
+		// Paint every pixel on the map and on the grid
 		for (int row = 0; row < Map.height; row++)
 			for (int col = 0; col < Map.width; col++)
-				mapTexture.SetPixel(col, Map.height - 1 - row, Map.map[row, col] == NodeType.FREE ? freeColor : obstacleColor);
+				mapTexture.SetPixel(col, Map.height - 1 - row, Map.map[row, col] == NodeType.FREE ? Color.clear : obstacleColor);
 
 		// Apply changes
 		mapTexture.Apply();
@@ -256,6 +256,26 @@ public class Displayer : MonoBehaviour
 	}
 	
 	/// <summary>
+	/// Updates image to display texture
+	/// </summary>
+	/// <param name="tex"> Texture to display </param>
+	/// <param name="renderer"> Image to display texture </param>
+	/// <param name="width"> Width of the image </param>
+	/// <param name="height"> height of the image </param>
+	public void UpdateLayer(Texture2D tex, Image renderer, int width, int height)
+	{
+		// Apply changes to texture
+		tex.Apply();
+		
+		// Create sprite
+		Rect rect = new Rect(0, 0, width, height);
+		Sprite sprite = Sprite.Create(tex, rect, Vector2.zero);
+		
+		// Set sprote as image's source
+		renderer.sprite = sprite;
+	}
+	
+	/// <summary>
 	/// Checks if mouse cursor is inside visible part of map
 	/// </summary>
 	/// <returns> True if mouse is inside, False otherwise </returns>
@@ -309,5 +329,46 @@ public class Displayer : MonoBehaviour
 		for (int i = 0; i < tex.width; i++)
 			for (int j = 0; j < tex.height; j++)
 				tex.SetPixel(i, j, Color.clear);
+	}
+	
+	/// <summary>
+	/// Returns amount of pixels that equal to allocated nodes
+	/// </summary>
+	public static int GetAmountOfNodesAllocated()
+	{
+		// Prepare result variable
+		int amountOfNodesAllocated = 0;
+		
+		// Iterate through path displayer texture
+		foreach (var pixel in Instance.pathTexture.GetPixels())
+		{
+			// Check if was marked in any way (its alpha will be changed from zero if it was)
+			if (pixel.a != 0)
+				amountOfNodesAllocated++;
+		}
+		
+		// Return found value
+		return amountOfNodesAllocated;
+	}
+	
+	/// <summary>
+	/// Returns amount of chunks that were drawn
+	/// </summary>
+	public static int GetAmountOfChunksAllocated()
+	{
+		// Prepare result variable
+		int amountOfChunksAllocated = 0;
+
+		// Iterate through chunk map
+		for (int chunkX = 0; chunkX < Map.width; chunkX += ChunkSizeManager.ChunkSize)
+			for (int chunkY = 0; chunkY < Map.height; chunkY += ChunkSizeManager.ChunkSize)
+			{
+				// Check if corner node is painted
+				if (Instance.pathTexture.GetPixel(chunkX, chunkY).a != 0)
+					amountOfChunksAllocated++;
+			}
+			
+		// Return final value
+		return amountOfChunksAllocated;
 	}
 }

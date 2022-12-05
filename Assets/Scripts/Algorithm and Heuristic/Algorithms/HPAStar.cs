@@ -9,10 +9,12 @@ public class HPAStar : Algorithm
 	/// <summary>
 	/// Class represents a single chunk
 	/// </summary>
-	class Chunk : Node
+	public class Chunk : Node
 	{
-		[Tooltip("Parent chunk in chunk path")]
-		public Chunk parentChunk;
+		[Tooltip("Constant value. Amount of memory used by single chunk.")]
+		public new const int MEMORY_USAGE = Node.MEMORY_USAGE + (8 * 2);
+		// Base usage
+		// Nullable bool = 2 bytes
 		
 		// Flags that indicate whether or not you can go from this chunk in given direction
 		public bool? canGoUp = null;
@@ -37,14 +39,15 @@ public class HPAStar : Algorithm
 		/// <param name="parentChunk"> Previous chunk in the path </param>
 		public Chunk(int x, int y, float cost, Chunk parentChunk) : base(x, y, cost, parentChunk) { }
 		
-		public override string ToString()
-		{
-			return "X=" + x + ", Y=" + y + ", GridX=" + (int)(x / ChunkSize) + ", GridY=" + (int)(y / ChunkSize) + ", Cost=" + goalBoundCost + ", N=" + canGoUp.Value + ", NE=" + canGoUpRight.Value + ", E=" + canGoRight.Value + ", SE=" + canGoDownRight.Value + ", S=" + canGoDown.Value + ", SW=" + canGoDownLeft.Value + ", W=" + canGoLeft.Value + ", NW=" + canGoUpLeft.Value;
-		}
+		public override string ToString() => "X=" + x + ", Y=" + y + ", GridX=" + (int)(x / ChunkSize) + ", GridY=" + (int)(y / ChunkSize) + ", Cost=" + goalBoundCost + ", Parent={" + (parentNode == null ? "None" : (parentNode.x + ", " + parentNode.y)) + "}";
 	}
 	
 	
-	// Variables that will store the values that has to be passed from Coroutines (can't use ref or out)
+	
+	
+	
+	[Tooltip("Singleton")]
+	public static HPAStar Instance;
 	
 	[Tooltip("Final chunk in the chunk path")]
 	Chunk finalChunk;
@@ -66,7 +69,7 @@ public class HPAStar : Algorithm
 	
 	[Tooltip("Final node in the node path. Since path si searched inside chunks, this node actually equals to start coordinates.")]
 	Node finalNode;
-	 
+	
 	[Tooltip("Amount of nodes analyzed by algorithm")]
 	int amountOfNodesAnalyzed;
 	
@@ -74,8 +77,8 @@ public class HPAStar : Algorithm
 	float timeToFindFinalPath;
 	
 	[Tooltip("Array of already visited chunks")]
-	Array2D<Chunk> visitedChunks;
-	
+	public Array2D<Chunk> visitedChunks;
+
 	
 	
 	
@@ -86,6 +89,9 @@ public class HPAStar : Algorithm
 	/// </summary>
 	public HPAStar(params Heuristic[] heuristics) : base(heuristics)
 	{
+		// Create singleton
+		Instance = this;
+
 		// Set name and description
 		name = "HPA*";
 		description = "HPA* (Hierarchical PathFinding A*) - Algorithm splits map into smaller chunks, uses A* to find path from chunk with start node to chunk with goal node and then uses A* to find path only inside chunks in path.";
@@ -109,8 +115,10 @@ public class HPAStar : Algorithm
 		float precalculation = (float)timer.Elapsed.TotalMilliseconds;
 		timer.Reset();
 		
-		// Save grid to file
-		PrintChunkMap(grid, width, height);
+		// Set details button action to create file with detailed data
+		DetailsButtonManager.EnableButton();
+		DetailsButtonManager.ButtonComponent.onClick.RemoveAllListeners();
+		DetailsButtonManager.ButtonComponent.onClick.AddListener(() => PrintChunkMap(grid, width, height));
 		
 		// Find path in this grid
 		yield return ApplyAStartOnGrid(grid, width, height, heuristic);
@@ -154,10 +162,69 @@ public class HPAStar : Algorithm
 		// Paint all pixels on displayer and calculate path's length
 		PrintPath(finalNode, out int nodesLength, out float pathLength);
 		
+		// Prepare messages to display
+		string msg1 = "TIME";
+		msg1 += "\nPrecalc:\t" + precalculation + " ms";
+		msg1 += "\nChunk path:\t" + timeToFindPathInChunkGrid + " ms";
+		msg1 += "\nFinal path:\t" + timeToFindFinalPath + " ms";
+		msg1 += "\nTotal:\t\t" + (precalculation + timeToFindPathInChunkGrid + timeToFindFinalPath) + " ms";
+		msg1 += "\n\nPATH LENGTH";
+		msg1 += "\nNodes:\t" + nodesLength;
+		msg1 += "\nDistance:\t" + pathLength.ToString("f2");
+		
+		int chunksAllocated = Displayer.GetAmountOfChunksAllocated();
+		string msg2 = "NODES AMOUNT";
+		msg2 += "\nChunks:";
+		msg2 += "\n\tTo Analyze:\t" + amountOfChunksToAnalyze;
+		msg2 += "\n\tAnalyzed:\t" + amountOfChunksAnalyzed;
+		msg2 += "\n\tAllocated:\t" + chunksAllocated;
+		msg2 += "\n\tIn Path:\t" + amountOfChunksInPath;
+		msg2 += "\nNodes:";
+		msg2 += "\n\tAnalyzed:\t" + amountOfNodesAnalyzed;
+		msg2 += "\n\tAllocated:\t" + ChunkSize * ChunkSize;
+		
+		string msg3 = "MEMORY USAGE";
+		msg3 += "\nUsage per chunk:\t" + Chunk.MEMORY_USAGE + " B";
+		msg3 += "\nUsage for nodes:\t" + (ChunkSize * ChunkSize * Node.MEMORY_USAGE) + " B";
+		msg3 += "\nTotal memory:\t" + (chunksAllocated * Chunk.MEMORY_USAGE) + (ChunkSize * ChunkSize * Node.MEMORY_USAGE) + " B";
+		
 		// Print statistics
-		ResultDisplayer.SetText(1, "SUCCESS\nPath was found!");
-		ResultDisplayer.SetText(2, "TIME\nPrecalc:\t" + precalculation + " ms\nChunks:\t" + timeToFindPathInChunkGrid + " ms\nNodes:\t" + timeToFindFinalPath + " ms\nTotal:\t\t" + (precalculation + timeToFindPathInChunkGrid + timeToFindFinalPath) + " ms");
-		ResultDisplayer.SetText(3, "MEMORY\nChunks:\n\tAnalyzed:\t" + amountOfChunksAnalyzed + "\n\tIn Path:\t" + amountOfChunksInPath + "\nNodes:\n\tAnazlyzed:\t" + amountOfNodesAnalyzed + "\n\tIn Path:\t" + nodesLength + "\nPath length:\t" + pathLength);
+		ResultDisplayer.SetText(1, msg1);
+		ResultDisplayer.SetText(2, msg2);
+		ResultDisplayer.SetText(3, msg3);
+	}
+	
+	/// <summary>
+	/// Tries to expand the node towards goven coordinates
+	/// </summary>
+	/// <param name="x"> X coordinate of the expansion </param>
+	/// <param name="y"> Y coordinate of the expansion </param>
+	/// <param name="parentNode"> Expanding node </param>
+	void TryToExpandNode(int x, int y, int chunkX, int chunkY, Node parentNode)
+	{
+		// Check diagonal condition (node can expand diagonally only if movement in both cardinal directions for that diagonal is possible)
+		if (parentNode.x - x != 0 && parentNode.y - y != 0)
+		{
+			// Movement is diagonal, check if movement in cardinals is possible
+			if (Map.map[parentNode.y, x] != FREE || Map.map[y, parentNode.x] != FREE)
+			{
+				// Movement in cardinals is not possible
+				return;
+			}
+		}
+		
+		// Check if node is free
+		if (nodesVisited[chunkX, chunkY] == null && Map.map[y, x] == FREE)
+		{
+			// Node is free, expand in that direction
+			Node newNode = new Node(x, y, parentNode, heuristic, false);
+			
+			// Add that node to list
+			list.Add(newNode);
+			
+			// Mark spot as visited
+			nodesVisited[chunkX, chunkY] = newNode;
+		}
 	}
 	
 	/// <summary>
@@ -185,14 +252,12 @@ public class HPAStar : Algorithm
 		// Iterate as long as there are chunks in list
 		while (chunk != null)
 		{
-			// Debug.Log("Analyzing chunk " + chunk);
-			
 			// Prepare array with info of whether or not node was visited
-			Array2D<bool> wasNodeVisited = new Array2D<bool>(ChunkSize, ChunkSize);
-			wasNodeVisited[node.x % ChunkSize, node.y % ChunkSize] = true;
+			nodesVisited = new Node[ChunkSize, ChunkSize];
+			nodesVisited[node.x % ChunkSize, node.y % ChunkSize] = node;
 			
 			// Prepare list with visited chunks
-			NodeSortedList list = new NodeSortedList(node);
+			list = new NodeSortedList(node);
 
 			// Prepare output variables
 			bool pathFoundInsideChunk = false;
@@ -202,11 +267,6 @@ public class HPAStar : Algorithm
 			{
 				// Get node from the list
 				node = list.PopAtZero();
-				
-				// Debug.Log("Analyzing node " + node);
-
-				// Paint analyzed node
-				// Displayer.Instance.PaintPath(node.x, node.y, Displayer.Instance.subAnalyzedColor);
 				amountOfNodesAnalyzed++;
 
 				// Get node's coords inside chunk
@@ -226,6 +286,7 @@ public class HPAStar : Algorithm
 						// Save final node
 						finalNode = node;
 	
+						// Exit coroutine
 						yield break;
 					}
 				}
@@ -383,121 +444,54 @@ public class HPAStar : Algorithm
 				
 				// End conditions were not met, expand the node
 
+				bool canGoNorth = node.y != Map.height - 1 && nodeChunkY != ChunkSize - 1;
+				bool canGoEast = node.x != Map.width - 1 && nodeChunkX != ChunkSize - 1;
+				bool canGoSouth = nodeChunkY != 0;
+				bool canGoWest = nodeChunkX != 0;
+
 				// Expand in NORTH directions if possible
-				if (nodeChunkY != ChunkSize - 1)
+				if (canGoNorth)
 				{
-					// Try to expand in NW
-					if (node.x != 0 && Map.map[node.y + 1, node.x - 1] == FREE)
-					{
-						// Node is inside map boundaries
+					// Try to expand in NORTH-WEST
+					if (canGoWest)
+						TryToExpandNode(node.x - 1, node.y + 1, nodeChunkX - 1, nodeChunkY + 1, node);
 						
-						if (nodeChunkX != 0 && wasNodeVisited[nodeChunkX - 1, nodeChunkY + 1] == false)
-						{
-							// Create new node, add it to the list and mark spot as visited
-							Node newNode = new Node(node.x - 1, node.y + 1, node, heuristic);
-							list.Add(newNode);
-							wasNodeVisited[nodeChunkX - 1, nodeChunkY + 1] = true;
-						}
-					}
+					// Try to expand in NORTH
+					TryToExpandNode(node.x, node.y + 1, nodeChunkX, nodeChunkY + 1, node);
 					
-					// Try to expand in N
-					if (Map.map[node.y + 1, node.x] == FREE)
-					{
-						// Node is inside map boundaries
-						
-						if (wasNodeVisited[nodeChunkX, nodeChunkY + 1] == false)
-						{
-							// Create new node, add it to the list and mark spot as visited
-							Node newNode = new Node(node.x, node.y + 1, node, heuristic);
-							list.Add(newNode);
-							wasNodeVisited[nodeChunkX, nodeChunkY + 1] = true;
-						}
-					}
-					
-					// Try to expand in NE
-					if (node.x + 1 != Map.width && Map.map[node.y + 1, node.x + 1] == FREE)
-					{
-						// Node is inside map boundaries
-						
-						if (nodeChunkX != ChunkSize - 1 && wasNodeVisited[nodeChunkX + 1, nodeChunkY + 1] == false)
-						{
-							// Create new node, add it to the list and mark spot as visited
-							Node newNode = new Node(node.x + 1, node.y + 1, node, heuristic);
-							list.Add(newNode);
-							wasNodeVisited[nodeChunkX + 1, nodeChunkY + 1] = true;
-						}
-					}
+					// Try to expand in NORTH-EAST
+					if (canGoEast)
+						TryToExpandNode(node.x + 1, node.y + 1, nodeChunkX + 1, nodeChunkY + 1, node);
 				}
 				
-				// Try to expand in E
-				if (node.x + 1 != Map.width && Map.map[node.y, node.x + 1] == FREE)
-				{
-					if (nodeChunkX != ChunkSize - 1 && wasNodeVisited[nodeChunkX + 1, nodeChunkY] == false)
-					{
-						// Create new node, add it to the list and mark spot as visited
-						Node newNode = new Node(node.x + 1, node.y, node, heuristic);
-						list.Add(newNode);
-						wasNodeVisited[nodeChunkX + 1, nodeChunkY] = true;
-					}
-				}
+				// Try to expand in EAST
+				if (canGoEast)
+					TryToExpandNode(node.x + 1, node.y, nodeChunkX + 1, nodeChunkY, node);
 				
 				// Expand in SOUTH directions if possible
-				if (nodeChunkY != 0 && node.y != 0)
+				if (canGoSouth)
 				{
-					// Try to expand in SW
-					if (node.x != 0 && Map.map[node.y - 1, node.x - 1] == FREE)
-					{
-						// Node is inside map boundaries
+					// Try to expand SOUTH-EAST
+					if (canGoEast)
+						TryToExpandNode(node.x + 1, node.y - 1, nodeChunkX + 1, nodeChunkY - 1, node);
 						
-						if (nodeChunkX != 0 && wasNodeVisited[nodeChunkX - 1, nodeChunkY - 1] == false)
-						{
-							// Create new node, add it to the list and mark spot as visited
-							Node newNode = new Node(node.x - 1, node.y - 1, node, heuristic);
-							list.Add(newNode);
-							wasNodeVisited[nodeChunkX - 1, nodeChunkY - 1] = true;
-						}
-					}
+					// Try to expand SOUTH
+					TryToExpandNode(node.x, node.y - 1, nodeChunkX, nodeChunkY - 1, node);
 					
-					// Try to expand in S
-					if (Map.map[node.y - 1, node.x] == FREE)
-					{
-						// Node is inside map boundaries
-						
-						if (wasNodeVisited[nodeChunkX, nodeChunkY - 1] == false)
-						{
-							// Create new node, add it to the list and mark spot as visited
-							Node newNode = new Node(node.x, node.y - 1, node, heuristic);
-							list.Add(newNode);
-							wasNodeVisited[nodeChunkX, nodeChunkY - 1] = true;
-						}
-					}
-					
-					// Try to expand in SE
-					if (node.x + 1 != Map.width && Map.map[node.y - 1, node.x + 1] == FREE)
-					{
-						if (nodeChunkX != ChunkSize - 1 && wasNodeVisited[nodeChunkX + 1, nodeChunkY - 1] == false)
-						{
-							// Create new node, add it to the list and mark spot as visited
-							Node newNode = new Node(node.x + 1, node.y - 1, node, heuristic);
-							list.Add(newNode);
-							wasNodeVisited[nodeChunkX + 1, nodeChunkY - 1] = true;
-						}
-					}
+					// Try to expand SOUTH-WEST
+					if (canGoWest)
+						TryToExpandNode(node.x - 1, node.y - 1, nodeChunkX - 1, nodeChunkY - 1, node);
 				}
-				
+
 				// Try to expand in W
-				if (nodeChunkX != 0 && Map.map[node.y, node.x - 1] == FREE && wasNodeVisited[nodeChunkX - 1, nodeChunkY] == false)
-				{
-					// Create new node, add it to the list and mark spot as visited
-					Node newNode = new Node(node.x - 1, node.y, node, heuristic);
-					list.Add(newNode);
-					wasNodeVisited[nodeChunkX - 1, nodeChunkY] = true;
-				}
-			
+				if (canGoWest)
+					TryToExpandNode(node.x - 1, node.y, nodeChunkX - 1, nodeChunkY, node);
+				
 				// Node expanded in every possible direction, sort list and go to the next node
 				list.Sort();
 				
 				// If solving process is supposed to be animated, do short delay
+				/*
 				if (Solver.animateSolvingProcess)
 				{
 					// Stop timer so that delay won't count towards total time
@@ -509,6 +503,7 @@ public class HPAStar : Algorithm
 					// Turn timer on again
 					timer.Start();
 				}
+				*/
 			}
 
 			// Check if path was found
@@ -529,6 +524,7 @@ public class HPAStar : Algorithm
 	/// <summary>
 	/// Tries to expand chunk in given direction
 	/// </summary>
+	/// <return> Whether or not chunk was expaneded </return>
 	void TryToExpandChunk(int gridX, int gridY, bool passageFlag, Chunk chunk)
 	{
 		// Check if can expand in that direction
@@ -552,7 +548,10 @@ public class HPAStar : Algorithm
 					visitedChunks[gridX, gridY].goalBoundCost = goalBoundCost;
 					
 					// Overwrite parent
-					nodesVisited[gridX, gridY].parentNode = chunk;
+					visitedChunks[gridX, gridY].parentNode = chunk;
+					
+					// Mask spot as visited
+					grid[gridX, gridY] = (Chunk)visitedChunks[gridX, gridY];
 					
 					// Add that chunk to list once again
 					list.Add(visitedChunks[gridX, gridY]);
@@ -566,12 +565,21 @@ public class HPAStar : Algorithm
 		{
 			// Chunk wasn't visited before, add it to list
 			list.Add(grid[gridX, gridY]);
-			
-			// Mark spot as visited
-			visitedChunks[gridX, gridY] = grid[gridX, gridY];
-			
+
+			// Set parent
+			grid[gridX, gridY].parentNode = chunk;
+
+			// Calculate its cost
+			heuristic.CalculateCost(grid[gridX, gridY]);
+
 			// Increase amount of chunks to analyze
 			amountOfChunksToAnalyze++;
+			
+			// Mark chunk as visited
+			visitedChunks[gridX, gridY] = grid[gridX, gridY];
+			
+			// Paint chunk as 'To Analyze'
+			PaintChunk(grid[gridX, gridY], Displayer.Instance.toAnalyzeColor);
 		}
 	}
 	
@@ -594,6 +602,9 @@ public class HPAStar : Algorithm
 		int goalChunkX = StartGoalManager.goalCol / ChunkSize;
 		int goalChunkY = StartGoalManager.goalRow / ChunkSize;
 		
+		// Save heuristic for later
+		this.heuristic = heuristic;
+		
 		// From this point on, chunks will be treated as nodes for overall A*
 		
 		// Get start chunk
@@ -608,7 +619,7 @@ public class HPAStar : Algorithm
 		
 		// Prepare security counter
 		int securityCounter = 0;
-		int gridSize = width * height;
+		int gridSize = width * height * 10;
 		
 		// Prepare variable that will store result
 		bool pathFound = false;
@@ -627,10 +638,7 @@ public class HPAStar : Algorithm
 			
 			// Get the best chunk
 			chunk = (Chunk)list.PopAtZero();
-			
-			// Increase counter
-			amountOfChunksAnalyzed++;
-			
+		
 			// Paint that chunk
 			PaintChunk(chunk, Displayer.Instance.analyzedColor);
 			
@@ -645,6 +653,10 @@ public class HPAStar : Algorithm
 				pathFound = true;
 				break;
 			}
+			
+			// Mark chunk as visited
+			visitedChunks[gridX, gridY] = grid[gridX, gridY];
+			amountOfChunksAnalyzed++;
 			
 			// Add neighbour chunks to the list
 			
@@ -886,6 +898,8 @@ public class HPAStar : Algorithm
 						
 						// Check if corners are free
 						if (Map.map[mapY + ChunkSize - 1, mapX + ChunkSize - 1] == FREE &&
+							Map.map[mapY + ChunkSize - 1, mapX + ChunkSize] == FREE &&
+							Map.map[mapY + ChunkSize, mapX + ChunkSize - 1] == FREE &&
 							Map.map[mapY + ChunkSize, mapX + ChunkSize] == FREE)
 						{
 							// Update values
@@ -909,6 +923,8 @@ public class HPAStar : Algorithm
 						
 						// Check if corners are free
 						if (Map.map[mapY, mapX + ChunkSize - 1] == FREE &&
+							Map.map[mapY - 1, mapX + ChunkSize - 1] ==  FREE &&
+							Map.map[mapY, mapX + ChunkSize] ==  FREE &&
 							Map.map[mapY - 1, mapX + ChunkSize] ==  FREE)
 						{
 							// Update values
@@ -932,6 +948,8 @@ public class HPAStar : Algorithm
 						
 						// Check if corners are free
 						if (Map.map[mapY, mapX] == FREE &&
+							Map.map[mapY - 1, mapX] == FREE &&
+							Map.map[mapY, mapX - 1] == FREE &&
 							Map.map[mapY - 1, mapX - 1] == FREE)
 						{
 							// Update values
@@ -955,6 +973,8 @@ public class HPAStar : Algorithm
 						
 						// Check if corners are free
 						if (Map.map[mapY + ChunkSize - 1, mapX] == FREE &&
+							Map.map[mapY + ChunkSize - 1, mapX - 1] == FREE &&
+							Map.map[mapY + ChunkSize, mapX] == FREE &&
 							Map.map[mapY + ChunkSize, mapX - 1] == FREE)
 						{
 							grid[x, y].canGoUpLeft = true;
@@ -1055,8 +1075,8 @@ public class HPAStar : Algorithm
 		// Save that data to file and open it
 		System.IO.File.WriteAllText("ChunkMap.txt", sb.ToString());
 		
-		// Uncomment line below if you want to automatically open generated file
-		// System.Diagnostics.Process.Start("ChunkMap.txt");
+		// Open newly generated file
+		System.Diagnostics.Process.Start("ChunkMap.txt");
 	}
 	
 	/// <summary>
@@ -1072,7 +1092,8 @@ public class HPAStar : Algorithm
 		// Paint every free node in this chunk
 		for (int x = 0; x < ChunkSize; x++)
 			for (int y = 0; y < ChunkSize; y++)
-				if (chunk.y + y < Map.height & chunk.x + x < Map.width && Map.map[chunk.y + y, chunk.x + x] == FREE)
+				//if (chunk.y + y < Map.height & chunk.x + x < Map.width && Map.map[chunk.y + y, chunk.x + x] == FREE)
+				if (chunk.y + y < Map.height & chunk.x + x < Map.width)
 					Displayer.Instance.PaintPath(chunk.x + x, chunk.y + y, chunkColor.Value);
 	}
 }

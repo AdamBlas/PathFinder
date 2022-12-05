@@ -119,6 +119,9 @@ public class AlgorithmSelector : MonoBehaviour
 		
 		// Fill heuristics' dropdown with available heuristics
 		PopulateHeuristicsDropdown(algorithms[index]);
+		
+		// Disable button responsible for details file
+		DetailsButtonManager.DisableButton();
 	}
 	
 	/// <summary>

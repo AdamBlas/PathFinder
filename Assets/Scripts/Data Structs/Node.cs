@@ -4,6 +4,12 @@ using UnityEngine;
 
 public class Node : System.IComparable<Node>
 {
+	[Tooltip("Constant value. Amount of memory required for a single node")]
+	public const int MEMORY_USAGE = 4 + 4 + 8 + 4 + 4;
+	// int = 4 bytes
+	// Object reference = 8 bytes for 64bit architecture (4 bytes for 32bit architecture)
+	// float = 4 bytes
+	
 	[Tooltip("X coord of the node")]
 	public int x;
 	
@@ -46,14 +52,14 @@ public class Node : System.IComparable<Node>
 	/// <param name="y"> Y coord </param>
 	/// <param name="parentNode"> Parent node </param>
 	/// <param name="heuristic"> Heuristic thta will be used to calculate cost </param>
-	public Node(int x, int y, Node parentNode, Heuristic heuristic)
+	public Node(int x, int y, Node parentNode, Heuristic heuristic, bool applyGoalBounding = true)
 	{
 		this.x = x;
 		this.y = y;
 		this.parentNode = parentNode;
 		
 		// Calculate node's cost
-		heuristic.CalculateCost(this);
+		heuristic.CalculateCost(this, applyGoalBounding);
 	}
 	
 	/// <summary>
@@ -69,6 +75,23 @@ public class Node : System.IComparable<Node>
 		this.y = y;
 		this.baseCost = cost;
 		this.goalBoundCost = cost;
+		this.parentNode = parentNode;
+	}
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="x"> X coord </param>
+	/// <param name="y"> Y coord </param>
+	/// <param name="baseCost"> Node's base cost </param>
+	/// <param name="goalBoundingCost"> Node's goal bound cost </param>
+	/// <param name="parentNode"> Parent node </param>
+	public Node(int x, int y, float baseCost, float goalBoundingCost, Node parentNode)
+	{
+		this.x = x;
+		this.y = y;
+		this.baseCost = baseCost;
+		this.goalBoundCost = goalBoundingCost;
 		this.parentNode = parentNode;
 	}
 	

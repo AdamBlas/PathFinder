@@ -39,8 +39,8 @@ public class LoadMap : MonoBehaviour
 		string[] mapText = File.ReadAllLines(path);
 		
 		// Get map dimensions from header
-		int height = int.Parse(mapText[1].Split(' ')[1]);
-		int width = int.Parse(mapText[2].Split(' ')[1]);
+		ushort height = ushort.Parse(mapText[1].Split(' ')[1]);
+		ushort width = ushort.Parse(mapText[2].Split(' ')[1]);
 		
 		// Create map
 		Map.CreateMap(width, height);

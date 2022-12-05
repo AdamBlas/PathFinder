@@ -5,11 +5,20 @@ using static NodeType;
 
 public class AStar : Algorithm
 {
+	[Tooltip("Singleton")]
+	public static AStar Instance;
+	
+	
+	
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
 	public AStar(params Heuristic[] heuristics) : base(heuristics)
 	{
+		// Create singleton
+		Instance = this;
+		
 		// Set name and description
 		name = "A*";
 		description = "A* - Algorithm selects the best node from the available pool and adds all adjecent nodes to the pool.\nIt guarantees to find a solution if such exists and that solution will be the best one possible.";
@@ -23,6 +32,17 @@ public class AStar : Algorithm
 	/// <param name="node"> Parent node </param>
 	public void TryToExpand(int x, int y, Node node)
 	{
+		// Check diagonal condition (node can expand diagonally only if movement in both cardinal directions for that diagonal is possible)
+		if (node.x - x != 0 && node.y - y != 0)
+		{
+			// Movement is diagonal, check if movement in cardinals is possible
+			if (Map.map[node.y, x] != FREE || Map.map[y, node.x] != FREE)
+			{
+				// Movement in cardinals is not possible
+				return;
+			}
+		}
+		
 		// If can expand in that direction, do it
 		if (nodesVisited[x, y] != null)
 		{
@@ -44,9 +64,6 @@ public class AStar : Algorithm
 					
 					// Add that node to list once again
 					list.Add(nodesVisited[x, y]);
-					
-					// Increase counter
-					nodesToReanalyze++;
 				}
 			}
 		}
@@ -59,8 +76,7 @@ public class AStar : Algorithm
 			// Mark spot as visited
 			nodesVisited[x, y] = newNode;
 						
-			// Increase amount of analyzed nodes and paint pixel
-			nodesToAnalyze++;
+			// Paint pixel
 			Displayer.Instance.PaintPath(x, y, Displayer.Instance.toAnalyzeColor);
 		}
 	}
@@ -87,16 +103,14 @@ public class AStar : Algorithm
 		nodesVisited[StartGoalManager.startCol, StartGoalManager.startRow] = node;
 		
 		// Prepare variables to store result
-		nodesToAnalyze = 0;
 		nodesAnalyzed = 0;
-		nodesToReanalyze = 0;
 		bool pathFound = false;
 		string resultMessage = "Path not found";
 		
 		// Prepare variable that will hold new nodes' coordinates
 		int y;
 
-		// This counter will secure loop to run infinitely
+		// This counter will secure loop from running infinitely
 		int securityCounter = 0;
 		int mapSize = Map.width * Map.height * 2;
 
@@ -120,20 +134,12 @@ public class AStar : Algorithm
 			nodesAnalyzed++;
 			
 			// Check if this is goal node
-			Debug.Log("Checking end condition...");
-			yield return null;
 			if (node.x == StartGoalManager.goalCol && node.y == StartGoalManager.goalRow)
 			{
-				Debug.Log("End condition met!");
-				yield return null;
-				
 				pathFound = true;
 				resultMessage = "Path was found";
-				
 				break;
 			}
-			Debug.Log("End condition NOT met");
-			yield return null;
 			
 			// Check if we can go in given direction
 			bool canGoUp = node.y != 0;
@@ -221,19 +227,38 @@ public class AStar : Algorithm
 			// Path was not found
 			// Display proper message and end method
 			ResultDisplayer.SetText(1, "FAILURE\n" + resultMessage);
+			ResultDisplayer.SetText(2, string.Empty);
+			ResultDisplayer.SetText(3, string.Empty);
 			yield break;
 		}
-		
 		// Path was found
-		
-		// Display message
-		ResultDisplayer.SetText(1, "SUCCESS\n" + resultMessage);
 		
 		// Paint all pixels on displayer and calculate path's length
 		PrintPath(node, out int nodesLength, out float pathLength);
 		
-		// Display statistics
-		ResultDisplayer.SetText(2, "TIME\n" + timer.Elapsed.TotalMilliseconds + " ms\n\nNODES\nTo Analyze:\t" + nodesToAnalyze + "\nAnalyzed:\t" + nodesAnalyzed + "\nAlocated:\t" + (nodesAnalyzed - nodesToReanalyze));
-		ResultDisplayer.SetText(3, "LENGTH\nNodes:\t" + nodesLength + "\nDistance:\t" + pathLength.ToString("f2"));
+		// Display message and statistics
+		
+		// Prepare message for displayer 1
+		string msg1 = "TIME";
+		msg1 += "\n" + timer.Elapsed.TotalMilliseconds + " ms";
+		msg1 += "\n\nPATH LENGTH";
+		msg1 += "\nNodes:\t" + nodesLength;
+		msg1 += "\nDistance:\t" + pathLength.ToString("f2");
+		
+		// Prepare message for displayer 2
+		int nodesAllocated = Displayer.GetAmountOfNodesAllocated();
+		string msg2 = "NODES AMOUNT";
+		msg2 +=	"\nAnalyzed:\t\t" + nodesAnalyzed;
+		msg2 += "\nAllocated:\t\t" + nodesAllocated;
+
+		// Prepare message for displayer 3
+		string msg3 = "MEMORY USAGE";
+		msg3 += "\nUsage per node:\t" + Node.MEMORY_USAGE + " B";
+		msg3 += "\nTotal memory:\t" + (nodesAllocated * Node.MEMORY_USAGE) + " B";
+		
+		// Display prepared messages
+		ResultDisplayer.SetText(1, msg1);
+		ResultDisplayer.SetText(2, msg2);
+		ResultDisplayer.SetText(3, msg3);
 	}
 }

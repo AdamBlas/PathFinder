@@ -15,7 +15,7 @@ public class CostOverwriteManager : MonoBehaviour
 	public static bool shouldOverwrite = true;
 	
 	[Tooltip("Goal Bounding Error Margin")]
-	public static float errorMargin;
+	public static float errorMargin = 1f;
 	
 	
 	

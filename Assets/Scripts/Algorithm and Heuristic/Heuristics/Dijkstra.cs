@@ -36,6 +36,13 @@ public class Dijkstra : Heuristic
 		int yOffset = Mathf.Abs(y - parentNode.y);
 		
 		// Return root of the sum of their pows
-		return sqrts[(xOffset * xOffset) + (yOffset * yOffset)];
+		int pow = (xOffset * xOffset) + (yOffset * yOffset);
+		
+		// If lookup array contains that index, use it
+		if (pow < sqrts.Length)
+			return sqrts[pow];
+			
+		// Otherwise, caluclate it
+		return Mathf.Sqrt(pow);
 	}
 }

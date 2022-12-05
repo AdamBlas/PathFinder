@@ -34,7 +34,7 @@ public static class Map
 	/// </summary>
 	/// <param name="width"> Width of the map </param>
 	/// <param name="height"> Height of the map </param>
-	public static void CreateMap(int width, int height)
+	public static void CreateMap(ushort width, ushort height)
 	{
 		// Create new array
 		map = new Array2D<NodeType>(height, width);
@@ -100,11 +100,11 @@ public static class Map
 		// =-=-=-=
 		
 		// Get new dimensions
-		width = xMax - xMin;
-		height = yMax - yMin;
+		width = xMax - xMin + 1;
+		height = yMax - yMin + 1;
 		
 		// Create new array
-		Array2D<NodeType> newMap = new Array2D<NodeType>(height, width);
+		Array2D<NodeType> newMap = new Array2D<NodeType>(height + 1, width + 1);
 		// NodeType[,] newMap = new NodeType[height, width];
 		
 		// Copy content from current map

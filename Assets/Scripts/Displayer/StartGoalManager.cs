@@ -10,11 +10,11 @@ public class StartGoalManager : MonoBehaviour
 	
 	// Start coords
 	public static bool startExists = false;
-	public static int startRow = -1, startCol = -1;
+	public static int startRow, startCol;
 	
 	// Goal coords
 	public static bool goalExists = false;
-	public static int goalRow = -1, goalCol = -1;
+	public static int goalRow, goalCol;
 	
 	
 	
@@ -139,7 +139,7 @@ public class StartGoalManager : MonoBehaviour
 		startCol = column;
 		
 		// Print that values to GUI
-		startButtonLabel.text = "Start: C" + column + " R" + row;
+		startButtonLabel.text = "Start: Column=" + column + ", Row=" + row;
 		
 		Displayer.Instance.PrintStartCoords();
 	}
@@ -160,7 +160,7 @@ public class StartGoalManager : MonoBehaviour
 		goalCol = column;
 		
 		// Print that values to GUI
-		goalButtonLabel.text = "Goal: C" + column + " R" + row;
+		goalButtonLabel.text = "Goal: Column=" + column + ", Row=" + row;
 		
 		Displayer.Instance.PrintGoalCoords();
 	}
@@ -201,10 +201,10 @@ public class StartGoalManager : MonoBehaviour
 	public void ClearStartGoalCoords()
 	{
 		// Set data
-		startRow = -1;
-		startCol = -1;
-		goalRow = -1;
-		goalCol = -1;
+		startRow = 0;
+		startCol = 0;
+		goalRow = 0;
+		goalCol = 0;
 		startExists = false;
 		goalExists = false;
 		
