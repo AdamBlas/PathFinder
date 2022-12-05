@@ -115,21 +115,23 @@ public class JPS : Algorithm
 		/// <summary>
 		/// Returns that node in a string array version, perfect for graphical interpretation
 		/// </summary>
-		public string[] ToStringArray(bool isPrimary, bool isStraight, bool isDiagonal)
+		public string[] ToStringArray(int x, int y, bool isPrimary, bool isStraight, bool isDiagonal)
 		{
 			// Prepare array for results
-			string[] result = new string[7];
+			string[] result = new string[9];
 			
 			// If node is free, print that node with all distances
 			if (free)
 			{
 				result[0] = "┌─────────────────┐";
 				result[1] = "│ " + (NW.HasValue ? NW.Value.ToString().PadRight(5) : "     ") + (N.HasValue ? N.Value.ToString().PadRight(3).PadLeft(5) : "     ") + (NE.HasValue ? NE.Value.ToString().PadLeft(5) : "     ") + " │";
-				result[2] = "│      " + (isPrimary ? " PRM " : "     ") + "      │";
-				result[3] = "│ " + (W.HasValue ? W.Value.ToString().PadRight(5) : "     ") + (isStraight ? " STR " : "     ") + (E.HasValue ? E.Value.ToString().PadLeft(5) : "     ") + " │";
-				result[4] = "│      " + (isDiagonal ? " DGN " : "     ") + "      │";
-				result[5] = "│ " + (SW.HasValue ? SW.Value.ToString().PadRight(5) : "     ") + (S.HasValue ? S.Value.ToString().PadRight(3).PadLeft(5) : "     ") + (SE.HasValue ? SE.Value.ToString().PadLeft(5) : "     ") + " │";
-				result[6] = "└─────────────────┘";
+				result[2] = "│                 │";
+				result[3] = "│" + (x + "×" + y).PadRight(10).PadLeft(17) + "│";
+				result[4] = "│ " + (W.HasValue ? W.Value.ToString().PadRight(5) : "     ") + (isPrimary ? " PRM " : "     ") + (E.HasValue ? E.Value.ToString().PadLeft(5) : "     ") + " │";
+				result[5] = "│       " + (isStraight ? "STR" : "   ") + "       │";
+				result[6] = "│       " + (isDiagonal ? "DGN" : "   ") + "       │";
+				result[7] = "│ " + (SW.HasValue ? SW.Value.ToString().PadRight(5) : "     ") + (S.HasValue ? S.Value.ToString().PadRight(3).PadLeft(5) : "     ") + (SE.HasValue ? SE.Value.ToString().PadLeft(5) : "     ") + " │";
+				result[8] = "└─────────────────┘";
 				
 				return result;
 			}
@@ -143,6 +145,8 @@ public class JPS : Algorithm
 				result[4] = "███████████████████";
 				result[5] = "███████████████████";
 				result[6] = "███████████████████";
+				result[7] = "███████████████████";
+				result[8] = "███████████████████";
 				
 				return result;
 			}
@@ -215,12 +219,8 @@ public class JPS : Algorithm
 	/// <param name="value"> Value to check </param>
 	int Sign(int value)
 	{
-		if (value == 0)
-			return 0;
-			
-		if (value > 0)
-			return 1;
-			
+		if (value == 0) return 0;
+		if (value > 0) return 1;
 		return -1;
 	}
 	
@@ -360,11 +360,51 @@ public class JPS : Algorithm
 		if (x == node.x || y == node.y)
 		{
 			// Movement is cardinal, check if there is straight path to goal
-			if ((node.x == StartGoalManager.goalCol || node.y == StartGoalManager.goalRow) &&
-				Mathf.Abs(node.x - StartGoalManager.goalCol + node.y - StartGoalManager.goalRow) <= distanceAbs)
+			if ((x == StartGoalManager.goalCol || y == StartGoalManager.goalRow) &&
+				Mathf.Abs(x - StartGoalManager.goalCol + y - StartGoalManager.goalRow) <= distanceAbs)
 			{
 				// There is straight path to the goal, save coordinates for a new Target Jump Point
 				newNodeCoords = new Vector2Int(StartGoalManager.goalCol, StartGoalManager.goalRow);
+			}
+			else
+			{
+				// Check if we are trying to move towards the goal
+				int movementDirX = x - node.x;
+				int movementDirY = y - node.y;
+				int goalDirX = StartGoalManager.goalCol - node.x;
+				int goalDirY = StartGoalManager.goalRow - node.y;
+				
+				if (movementDirX * goalDirX > 0 || movementDirY * goalDirY > 0)
+				{
+					// Movement and goal direction have the same signs
+					// Calculate desired length of the movement
+					int	desiredMovementLength;
+					
+					if (movementDirX == 0)
+						desiredMovementLength = Mathf.Abs(movementDirY) - Mathf.Abs(goalDirX);
+					else
+						desiredMovementLength = Mathf.Abs(movementDirX) - Mathf.Abs(goalDirY);
+					
+					// Check if we can go such distance
+					if (desiredMovementLength <= distanceAbs)
+					{
+						int newX, newY;
+						
+						if (movementDirX == 0)
+						{
+							newX = node.x;
+							newY = node.y + (desiredMovementLength * Sign(movementDirY));
+						}
+						else
+						{
+							newX = node.x + (desiredMovementLength * Sign(movementDirX));
+							newY = node.y;
+						}
+						
+						// Assign coordinates
+						//newNodeCoords = new Vector2Int(newX, newY);
+					}
+				}
 			}
 		}
 		else
@@ -1241,13 +1281,13 @@ public class JPS : Algorithm
 	IEnumerator PrintMapToFile()
 	{
 		// Prepare output array
-		string[,] output = new string[Map.width, Map.height * 7];
+		string[,] output = new string[Map.width, Map.height * 9];
 		
 		// Prepare progress values
 		int dataProgress = 0;
 		int maxDataProgress = Map.height * Map.width;
 		int fileProgress = 0;
-		int maxFileProgress = Map.height * 7 * Map.width;
+		int maxFileProgress = Map.height * 9 * Map.width;
 		int lastPercentage = 0;
 		
 		// Iterate through map
@@ -1255,11 +1295,11 @@ public class JPS : Algorithm
 			for (int col = 0; col < Map.width; col++)
 			{
 				// Get node as string array
-				string[] nodeStr = distanceMap[col, row].ToStringArray(primary[col, row] != null, straight[col, row] != null, diagonal[col, row] != null);
+				string[] nodeStr = distanceMap[col, row].ToStringArray(col, row, primary[col, row] != null, straight[col, row] != null, diagonal[col, row] != null);
 				
 				// Use this array to fill result array
-				for (int i = 0; i < 7; i++)
-					output[col, (row * 7) + i] = nodeStr[i];
+				for (int i = 0; i < 9; i++)
+					output[col, (row * 9) + i] = nodeStr[i];
 					
 				dataProgress++;
 				int percentage = 100 * dataProgress / maxDataProgress;
@@ -1274,7 +1314,7 @@ public class JPS : Algorithm
 			
 		// Convert array to a single string
 		System.Text.StringBuilder sb = new System.Text.StringBuilder();
-		for (int row = 0; row < Map.height * 7; row++)
+		for (int row = 0; row < Map.height * 9; row++)
 		{
 			for (int col = 0; col < Map.width; col++)
 			{
