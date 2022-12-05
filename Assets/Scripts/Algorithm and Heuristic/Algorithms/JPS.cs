@@ -123,30 +123,41 @@ public class JPS : Algorithm
 			// If node is free, print that node with all distances
 			if (free)
 			{
-				result[0] = "┌─────────────┐";
-				result[1] = "│ " + (NW.HasValue ? NW.Value.ToString().PadRight(4) : "    ") + (N.HasValue ? N.Value.ToString().PadRight(2).PadLeft(3) : "   ") + (NE.HasValue ? NE.Value.ToString().PadLeft(4) : "    ") + " │";
-				result[2] = "│     " + (isPrimary ? "PRM" : "   ") + "     │";
-				result[3] = "│ " + (W.HasValue ? W.Value.ToString().PadRight(4) : "    ") + (isStraight ? "STR" : "   ") + (E.HasValue ? E.Value.ToString().PadLeft(4) : "    ") + " │";
-				result[4] = "│     " + (isDiagonal ? "DGN" : "   ") + "     │";
-				result[5] = "│ " + (SW.HasValue ? SW.Value.ToString().PadRight(4) : "    ") + (S.HasValue ? S.Value.ToString().PadRight(2).PadLeft(3) : "   ") + (SE.HasValue ? SE.Value.ToString().PadLeft(4) : "    ") + " │";
-				result[6] = "└─────────────┘";
+				result[0] = "┌─────────────────┐";
+				result[1] = "│ " + (NW.HasValue ? NW.Value.ToString().PadRight(5) : "     ") + (N.HasValue ? N.Value.ToString().PadRight(3).PadLeft(5) : "     ") + (NE.HasValue ? NE.Value.ToString().PadLeft(5) : "     ") + " │";
+				result[2] = "│      " + (isPrimary ? " PRM " : "     ") + "      │";
+				result[3] = "│ " + (W.HasValue ? W.Value.ToString().PadRight(5) : "     ") + (isStraight ? " STR " : "     ") + (E.HasValue ? E.Value.ToString().PadLeft(5) : "     ") + " │";
+				result[4] = "│      " + (isDiagonal ? " DGN " : "     ") + "      │";
+				result[5] = "│ " + (SW.HasValue ? SW.Value.ToString().PadRight(5) : "     ") + (S.HasValue ? S.Value.ToString().PadRight(3).PadLeft(5) : "     ") + (SE.HasValue ? SE.Value.ToString().PadLeft(5) : "     ") + " │";
+				result[6] = "└─────────────────┘";
 				
 				return result;
 			}
 			// If node is obstacle, create solid block
 			else
 			{
-				result[0] = "███████████████";
-				result[1] = "███████████████";
-				result[2] = "███████████████";
-				result[3] = "███████████████";
-				result[4] = "███████████████";
-				result[5] = "███████████████";
-				result[6] = "███████████████";
+				result[0] = "███████████████████";
+				result[1] = "███████████████████";
+				result[2] = "███████████████████";
+				result[3] = "███████████████████";
+				result[4] = "███████████████████";
+				result[5] = "███████████████████";
+				result[6] = "███████████████████";
 				
 				return result;
 			}
 		}
+	}
+	
+	class NodeWithDir : Node
+	{
+		public enum Dir { N, NE, E, SE, S, SW, W, NW }
+		
+		public Dir? travelDir = null;
+		
+		public NodeWithDir(int x, int y, float cost) : base(x, y, cost) { }
+
+		public NodeWithDir(int x, int y, Node parentNode, Heuristic heuristic) : base(x, y, parentNode, heuristic) { }
 	}
 
 	
@@ -334,7 +345,7 @@ public class JPS : Algorithm
 	/// <param name="y"> target Y coordinate </param>
 	/// <param name="distance"> Distance in that direction from distance map </param>
 	/// <param name="node"> Parent node </param>
-	void TryToExpand(int x, int y, int distance, Node node)
+	void TryToExpand(int x, int y, int distance, Node node, NodeWithDir.Dir direction)
 	{
 		// Check if there is point in expanding
 		if (distance == 0)
@@ -367,7 +378,7 @@ public class JPS : Algorithm
 			int goalDirX = StartGoalManager.goalCol - node.x;
 			int goalDirY = StartGoalManager.goalRow - node.y;
 			
-			if (movementDirX * goalDirX >= 0 && movementDirY * goalDirY >= 0)
+			if (movementDirX * goalDirX >= 0 || movementDirY * goalDirY >= 0)
 			{
 				// Movement direction and direction to goal have the same sign, so goal is in that direction
 				// Check if we can get there without hitting wall or other jump point
@@ -407,7 +418,8 @@ public class JPS : Algorithm
 		if (nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y] == null)
 		{
 			// Point wasn't visited before, create new node and assign precalculated costs
-			nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y] = new Node(newNodeCoords.Value.x, newNodeCoords.Value.y, node, heuristic);
+			nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y] = new NodeWithDir(newNodeCoords.Value.x, newNodeCoords.Value.y, node, heuristic);
+			((NodeWithDir)nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y]).travelDir = direction;
 			
 			// Add that point to the list and mark it on displayer
 			list.Add(nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y]);
@@ -425,7 +437,8 @@ public class JPS : Algorithm
 				nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y].parentNode = node;
 				nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y].baseCost = baseCost;
 				nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y].goalBoundCost = goalBoundingCost;
-			
+				((NodeWithDir)nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y]).travelDir = direction;
+				
 				// Re-add it ot the list
 				list.Add(nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y]);
 			}
@@ -442,12 +455,12 @@ public class JPS : Algorithm
 		timer.Start();
 		
 		// Create open list and initialize it with start node
-		Node node = new Node(StartGoalManager.startCol, StartGoalManager.startRow, 0);
+		NodeWithDir node = new NodeWithDir(StartGoalManager.startCol, StartGoalManager.startRow, 0);
 		list = new NodeSortedList(node);
 		
 		// Prepare array with information about previously visited nodes
-		nodesVisited = new Node[Map.width, Map.height];
-		nodesVisited[StartGoalManager.startCol, StartGoalManager.startRow] = node;
+		nodesVisited = new NodeWithDir[Map.width, Map.height];
+		nodesVisited[StartGoalManager.startCol, StartGoalManager.startRow] = (Node)node;
 		
 		// Prepare variables that will store result
 		nodesAnalyzed = 0;
@@ -456,16 +469,6 @@ public class JPS : Algorithm
 		// This counter will secure loop from running infinitely
 		int securityCounter = 0;
 		int mapSize = Map.width * Map.height * 2;
-		
-		// Prepare variables that will store movement direction
-		bool goingNorth = true;
-		bool goingNorthEast = true;
-		bool goingEast = true;
-		bool goingSouthEast = true;
-		bool goingSouth = true;
-		bool goingSouthWest = true;
-		bool goingWest = true;
-		bool goingNorthWest = true;
 		
 		// Start loop
 		while (true)
@@ -482,7 +485,7 @@ public class JPS : Algorithm
 				break;
 				
 			// Get best node from list
-			node = list.PopAtZero();
+			node = (NodeWithDir)list.PopAtZero();
 			nodesAnalyzed++;
 			
 			// Check if this is goal node
@@ -496,242 +499,137 @@ public class JPS : Algorithm
 			int x = node.x;
 			int y = node.y;
 			DistancenNode dist = distanceMap[x, y];
-			
-			// Get travel direction, skip start node
-			if (node.parentNode != null)
-			{
-				// Reset flags
-				goingNorth = false;
-				goingNorthEast = false;
-				goingEast = false;
-				goingSouthEast = false;
-				goingSouth = false;
-				goingSouthWest = false;
-				goingWest = false;
-				goingNorthWest = false;
-				
-				// Get offsets
-				int xDiff = node.x - node.parentNode.x;
-				int yDiff = node.y - node.parentNode.y;
-				
-				if (xDiff == 0)
-				{
-					// There is no difference in X axis, movement is either NORTH or SOUTH
-					if (yDiff > 0)
-					{
-						// Movement is SOUTH
-						goingSouth = true;
-					}
-					else
-					{
-						// Movement is NORTH
-						goingNorth = true;
-					}
-				}
-				else if (yDiff == 0)
-				{
-					// There is no difference in Y axis, movement is either EAST or WEST
-					if (xDiff > 0)
-					{
-						// Movement is EAST
-						goingEast = true;
-					}
-					else
-					{
-						// Movement is WEST
-						goingWest = true;
-					}
-				}
-				else
-				{
-					// Movement is diagonal
-					if (xDiff > 0)
-					{
-						// Movement is either NORTH-EAST or SOUTH-EAST
-						if (yDiff > 0)
-						{
-							// Movement is SOUTH-EAST
-							goingSouthEast = true;
-						}
-						else
-						{
-							// Movement is NORTH-EAST
-							goingNorthEast = true;
-						}
-					}
-					else
-					{
-						// Movement is either NORTH-WEST or SOUTH-WEST
-						if (yDiff > 0)
-						{
-							// Movement is SOUTH-WEST
-							goingSouthWest = true;
-						}
-						else
-						{
-							// Movement is NORTH-WEST
-							goingNorthWest = true;
-						}
-					}
-				}
-			}
-			
+
 			// Expand in certain direction based on travel direction
-			if (node.parentNode == null)
+			int N, NE, E, SE, S, SW, W, NW;
+			
+			switch (node.travelDir)
 			{
-				// This is first iteration, expand in every direction
-				
+			case null:
 				// Prepare absolute values
-				int N = Mathf.Abs(dist.N.Value);
-				int NE = Mathf.Abs(dist.NE.Value);
-				int E = Mathf.Abs(dist.E.Value);
-				int SE = Mathf.Abs(dist.SE.Value);
-				int S = Mathf.Abs(dist.S.Value);
-				int SW = Mathf.Abs(dist.SW.Value);
-				int W = Mathf.Abs(dist.W.Value);
-				int NW = Mathf.Abs(dist.NW.Value);
+				N = Mathf.Abs(dist.N.Value);
+				NE = Mathf.Abs(dist.NE.Value);
+				E = Mathf.Abs(dist.E.Value);
+				SE = Mathf.Abs(dist.SE.Value);
+				S = Mathf.Abs(dist.S.Value);
+				SW = Mathf.Abs(dist.SW.Value);
+				W = Mathf.Abs(dist.W.Value);
+				NW = Mathf.Abs(dist.NW.Value);
 				
 				// Expand in given directions
-				TryToExpand(x, y - N, dist.N.Value, node);
-				TryToExpand(x + NE, y - NE, dist.NE.Value, node);
-				TryToExpand(x + E, y, dist.E.Value, node);
-				TryToExpand(x + SE, y + SE, dist.SE.Value, node);
-				TryToExpand(x, y + S, dist.S.Value, node);
-				TryToExpand(x - SW, y + SW, dist.SW.Value, node);
-				TryToExpand(x - W, y, dist.W.Value, node);
-				TryToExpand(x - NW, y - NW, dist.NW.Value, node);
-			}
-			else
-			{
-				// Check traveling directions
-				if (goingNorth)
-				{
-					// For traveling NORTH, expand in directions: E, NE, N, NW, W
+				TryToExpand(x, y - N, dist.N.Value, node, NodeWithDir.Dir.N);
+				TryToExpand(x + NE, y - NE, dist.NE.Value, node, NodeWithDir.Dir.NE);
+				TryToExpand(x + E, y, dist.E.Value, node, NodeWithDir.Dir.E);
+				TryToExpand(x + SE, y + SE, dist.SE.Value, node, NodeWithDir.Dir.SE);
+				TryToExpand(x, y + S, dist.S.Value, node, NodeWithDir.Dir.S);
+				TryToExpand(x - SW, y + SW, dist.SW.Value, node, NodeWithDir.Dir.SW);
+				TryToExpand(x - W, y, dist.W.Value, node, NodeWithDir.Dir.W);
+				TryToExpand(x - NW, y - NW, dist.NW.Value, node, NodeWithDir.Dir.NW);
+				break;
+			case NodeWithDir.Dir.N:
+				// Prepare absolute values
+				E = Mathf.Abs(dist.E.Value);
+				NE = Mathf.Abs(dist.NE.Value);
+				N = Mathf.Abs(dist.N.Value);
+				NW = Mathf.Abs(dist.NW.Value);
+				W = Mathf.Abs(dist.W.Value);
 			
-					// Prepare absolute values
-					int E = Mathf.Abs(dist.E.Value);
-					int NE = Mathf.Abs(dist.NE.Value);
-					int N = Mathf.Abs(dist.N.Value);
-					int NW = Mathf.Abs(dist.NW.Value);
-					int W = Mathf.Abs(dist.W.Value);
+				// Expand in given directions
+				TryToExpand(x + E, y, dist.E.Value, node, NodeWithDir.Dir.E);
+				TryToExpand(x + NE, y - NE, dist.NE.Value, node, NodeWithDir.Dir.NE);
+				TryToExpand(x, y - N, dist.N.Value, node, NodeWithDir.Dir.N);
+				TryToExpand(x - NW, y - NW, dist.NW.Value, node, NodeWithDir.Dir.NW);
+				TryToExpand(x - W, y, dist.W.Value, node, NodeWithDir.Dir.W);
+				break;
+			case NodeWithDir.Dir.NE:
+				// Prepare absolute values
+				E = Mathf.Abs(dist.E.Value);
+				NE = Mathf.Abs(dist.NE.Value);
+				N = Mathf.Abs(dist.N.Value);
 			
-					// Expand in given directions
-					TryToExpand(x + E, y, dist.E.Value, node);
-					TryToExpand(x + NE, y - NE, dist.NE.Value, node);
-					TryToExpand(x, y - N, dist.N.Value, node);
-					TryToExpand(x - NW, y - NW, dist.NW.Value, node);
-					TryToExpand(x - W, y, dist.W.Value, node);
-				}
-				else if (goingNorthEast)
-				{
-					// For traveling NORTH-EAST, expand in directions: E, NE, N
+				// Expand in given directions
+				TryToExpand(x + E, y, dist.E.Value, node, NodeWithDir.Dir.E);
+				TryToExpand(x + NE, y - NE, dist.NE.Value, node, NodeWithDir.Dir.NE);
+				TryToExpand(x, y - N, dist.N.Value, node, NodeWithDir.Dir.N);
+				break;
+			case NodeWithDir.Dir.E:
+				// Prepare absolute values
+				S = Mathf.Abs(dist.S.Value);
+				SE = Mathf.Abs(dist.SE.Value);
+				E = Mathf.Abs(dist.E.Value);
+				NE = Mathf.Abs(dist.NE.Value);
+				N = Mathf.Abs(dist.N.Value);
 			
-					// Prepare absolute values
-					int E = Mathf.Abs(dist.E.Value);
-					int NE = Mathf.Abs(dist.NE.Value);
-					int N = Mathf.Abs(dist.N.Value);
+				// Expand in given directions
+				TryToExpand(x, y + S, dist.S.Value, node, NodeWithDir.Dir.S);
+				TryToExpand(x + SE, y + SE, dist.SE.Value, node, NodeWithDir.Dir.SE);
+				TryToExpand(x + E, y, dist.E.Value, node, NodeWithDir.Dir.E);
+				TryToExpand(x + NE, y - NE, dist.NE.Value, node, NodeWithDir.Dir.NE);
+				TryToExpand(x, y - N, dist.N.Value, node, NodeWithDir.Dir.N);
+				break;
+			case NodeWithDir.Dir.SE:
+				// Prepare absolute values
+				S = Mathf.Abs(dist.S.Value);
+				SE = Mathf.Abs(dist.SE.Value);
+				E = Mathf.Abs(dist.E.Value);
 			
-					// Expand in given directions
-					TryToExpand(x + E, y, dist.E.Value, node);
-					TryToExpand(x + NE, y - NE, dist.NE.Value, node);
-					TryToExpand(x, y - N, dist.N.Value, node);
-				}
-				else if (goingEast)
-				{
-					// For traveling EAST, expand in directions: S, SE, E, NE, N
+				// Expand in given directions
+				TryToExpand(x, y + S, dist.S.Value, node, NodeWithDir.Dir.S);
+				TryToExpand(x + SE, y + SE, dist.SE.Value, node, NodeWithDir.Dir.SE);
+				TryToExpand(x + E, y, dist.E.Value, node, NodeWithDir.Dir.E);
+				break;
+			case NodeWithDir.Dir.S:
+				// Prepare absolute values
+				W = Mathf.Abs(dist.W.Value);
+				SW = Mathf.Abs(dist.SW.Value);
+				S = Mathf.Abs(dist.S.Value);
+				SE = Mathf.Abs(dist.SE.Value);
+				E = Mathf.Abs(dist.E.Value);
 			
-					// Prepare absolute values
-					int S = Mathf.Abs(dist.S.Value);
-					int SE = Mathf.Abs(dist.SE.Value);
-					int E = Mathf.Abs(dist.E.Value);
-					int NE = Mathf.Abs(dist.NE.Value);
-					int N = Mathf.Abs(dist.N.Value);
+				// Expand in given directions
+				TryToExpand(x - W, y, dist.W.Value, node, NodeWithDir.Dir.W);
+				TryToExpand(x - SW, y + SW, dist.SW.Value, node, NodeWithDir.Dir.SW);
+				TryToExpand(x, y + S, dist.S.Value, node, NodeWithDir.Dir.S);
+				TryToExpand(x + SE, y + SE, dist.SE.Value, node, NodeWithDir.Dir.SE);
+				TryToExpand(x + E, y, dist.E.Value, node, NodeWithDir.Dir.E);
+				break;
+			case NodeWithDir.Dir.SW:
+				// Prepare absolute values
+				W = Mathf.Abs(dist.W.Value);
+				SW = Mathf.Abs(dist.SW.Value);
+				S = Mathf.Abs(dist.S.Value);
 			
-					// Expand in given directions
-					TryToExpand(x, y + S, dist.S.Value, node);
-					TryToExpand(x + SE, y + SE, dist.SE.Value, node);
-					TryToExpand(x + E, y, dist.E.Value, node);
-					TryToExpand(x + NE, y - NE, dist.NE.Value, node);
-					TryToExpand(x, y - N, dist.N.Value, node);
-				}
-				else if (goingSouthEast)
-				{
-					// For traveling SOUTH-EAST, expand in directions: S, SE, E
+				// Expand in given directions
+				TryToExpand(x - W, y, dist.W.Value, node, NodeWithDir.Dir.W);
+				TryToExpand(x - SW, y + SW, dist.SW.Value, node, NodeWithDir.Dir.SW);
+				TryToExpand(x, y + S, dist.S.Value, node, NodeWithDir.Dir.S);	
+				break;
+			case NodeWithDir.Dir.W:
+				// Prepare absolute values
+				N = Mathf.Abs(dist.N.Value);
+				NW = Mathf.Abs(dist.NW.Value);
+				W = Mathf.Abs(dist.W.Value);
+				SW = Mathf.Abs(dist.SW.Value);
+				S = Mathf.Abs(dist.S.Value);
 			
-					// Prepare absolute values
-					int S = Mathf.Abs(dist.S.Value);
-					int SE = Mathf.Abs(dist.SE.Value);
-					int E = Mathf.Abs(dist.E.Value);
+				// Expand in given directions
+				TryToExpand(x, y - N, dist.N.Value, node, NodeWithDir.Dir.N);
+				TryToExpand(x - NW, y - NW, dist.NW.Value, node, NodeWithDir.Dir.NW);
+				TryToExpand(x - W, y, dist.W.Value, node, NodeWithDir.Dir.W);
+				TryToExpand(x - SW, y + SW, dist.SW.Value, node, NodeWithDir.Dir.SW);
+				TryToExpand(x, y + S, dist.S.Value, node, NodeWithDir.Dir.S);
+				break;
+			case NodeWithDir.Dir.NW:
+				// Prepare absolute values
+				N = Mathf.Abs(dist.N.Value);
+				NW = Mathf.Abs(dist.NW.Value);
+				W = Mathf.Abs(dist.W.Value);
 			
-					// Expand in given directions
-					TryToExpand(x, y + S, dist.S.Value, node);
-					TryToExpand(x + SE, y + SE, dist.SE.Value, node);
-					TryToExpand(x + E, y, dist.E.Value, node);
-				}
-				else if (goingSouth)
-				{
-					// For traveling SOUTH, epxand in directions: W, SW, S, SE, E
-			
-					// Prepare absolute values
-					int W = Mathf.Abs(dist.W.Value);
-					int SW = Mathf.Abs(dist.SW.Value);
-					int S = Mathf.Abs(dist.S.Value);
-					int SE = Mathf.Abs(dist.SE.Value);
-					int E = Mathf.Abs(dist.E.Value);
-			
-					// Expand in given directions
-					TryToExpand(x - W, y, dist.W.Value, node);
-					TryToExpand(x - SW, y + SW, dist.SW.Value, node);
-					TryToExpand(x, y + S, dist.S.Value, node);
-					TryToExpand(x + SE, y + SE, dist.SE.Value, node);
-					TryToExpand(x + E, y, dist.E.Value, node);
-				}
-				else if (goingSouthWest)
-				{
-					// For traveling SOUTH-WEST, expand in directions: W, SW, S
-			
-					// Prepare absolute values
-					int W = Mathf.Abs(dist.W.Value);
-					int SW = Mathf.Abs(dist.SW.Value);
-					int S = Mathf.Abs(dist.S.Value);
-			
-					// Expand in given directions
-					TryToExpand(x - W, y, dist.W.Value, node);
-					TryToExpand(x - SW, y + SW, dist.SW.Value, node);
-					TryToExpand(x, y + S, dist.S.Value, node);			
-				}
-				else if (goingWest)
-				{
-					// For traveling WEST, expand in directions: N, NW, W, SW, S
-			
-					// Prepare absolute values
-					int N = Mathf.Abs(dist.N.Value);
-					int NW = Mathf.Abs(dist.NW.Value);
-					int W = Mathf.Abs(dist.W.Value);
-					int SW = Mathf.Abs(dist.SW.Value);
-					int S = Mathf.Abs(dist.S.Value);
-			
-					// Expand in given directions
-					TryToExpand(x, y - N, dist.N.Value, node);
-					TryToExpand(x - NW, y - NW, dist.NW.Value, node);
-					TryToExpand(x - W, y, dist.W.Value, node);
-					TryToExpand(x - SW, y + SW, dist.SW.Value, node);
-					TryToExpand(x, y + S, dist.S.Value, node);
-				}
-				else if (goingNorthWest)
-				{
-					// For traveling NORTH-WEST, wxpand in directions: N, NW, W
-			
-					// Prepare absolute values
-					int N = Mathf.Abs(dist.N.Value);
-					int NW = Mathf.Abs(dist.NW.Value);
-					int W = Mathf.Abs(dist.W.Value);
-			
-					// Expand in given directions
-					TryToExpand(x, y - N, dist.N.Value, node);
-					TryToExpand(x - NW, y - NW, dist.NW.Value, node);
-					TryToExpand(x - W, y, dist.W.Value, node);
-				}
+				// Expand in given directions
+				TryToExpand(x, y - N, dist.N.Value, node, NodeWithDir.Dir.N);
+				TryToExpand(x - NW, y - NW, dist.NW.Value, node, NodeWithDir.Dir.NW);
+				TryToExpand(x - W, y, dist.W.Value, node, NodeWithDir.Dir.W);
+				break;
 			}
 			// Node expanded in every possible direction
 			
