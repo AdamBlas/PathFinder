@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public abstract class Algorithm
 {
@@ -14,7 +15,7 @@ public abstract class Algorithm
 	public Heuristic[] heuristics;
 	
 	[Tooltip("Array of visited nodes")]
-	public Node[,] nodesVisited;
+	public Array2D<Node> nodesVisited;
 	
 	[Tooltip("List of nodes to analyze")]
 	public NodeSortedList list;
@@ -24,8 +25,14 @@ public abstract class Algorithm
 	
 	[Tooltip("Amount of nodes analyzed")]
 	public int nodesAnalyzed;
-
 	
+	[Tooltip("Name of the file that will contain statistics")]
+	public string statsFileName;
+
+	[Tooltip("Array of values to average")]
+	protected List<float[]> statsToAverage = new List<float[]>();
+	
+
 	
 	
 	
@@ -45,8 +52,9 @@ public abstract class Algorithm
 	/// Solves algorithm
 	/// </summary>
 	/// <param name="heuristic"> Heuristic used to calculate node's value </param>
-	public abstract IEnumerator Solve(Heuristic heuristic);
-	
+	/// <param name="howManyTimes"> How many times algorithm has to solve problem before getting average results </param>
+	/// <param name="howMuchToRemove"> How many worst records has to be deleted before averaging </param>
+	public abstract IEnumerator Solve(Heuristic heuristic, int howManyTimes, int howMuchToRemove);
 	
 	/// <summary>
 	/// Prints path from final node back to the goal node
@@ -72,5 +80,70 @@ public abstract class Algorithm
 			// Switch node to parent
 			node = node.parentNode;
 		}
+	}
+	
+	/// <summary>
+	/// Saves given stats for later to average them
+	/// </summary>
+	protected void AddValuesToAverage(params float[] values)
+	{
+		statsToAverage.Add(values);
+	}
+	
+	/// <summary>
+	/// Sorts values stored in statsToAverage, removes worst results and averages rest
+	/// </summary>
+	/// <param name="howMuchToRemove"> How much worst records has to be removed </param>
+	/// <param name="indexToSortBy"> Index in the array to sort list by </param>
+	/// <returns> Array of averaged values </returns>
+	protected float[] AverageValues(int howMuchToRemove, int indexToSortBy)
+	{
+		// If there are no values to average, return null
+		if (statsToAverage.Count == 0)
+			return null;
+		
+		// Sort list using custom comparer
+		statsToAverage = statsToAverage.OrderBy((arr) => arr[indexToSortBy]).ToList();
+
+		// Remove the worst results
+		if (howMuchToRemove < statsToAverage.Count)
+			statsToAverage.RemoveRange(statsToAverage.Count - howMuchToRemove, howMuchToRemove);
+		else
+			Debug.LogWarning("WARNING: Not removing border values because there are not enough records");
+		
+		// Average the rest
+		float[] avg = new float[statsToAverage[0].Length];
+		
+		// Sum stats
+		foreach (var record in statsToAverage)
+			for (int i = 0; i < record.Length; i++)
+				avg[i] += record[i];
+
+		// Average sums
+		for (int i = 0; i < avg.Length; i++)
+			avg[i] /= statsToAverage.Count;
+			
+		// Clear list for future operations
+		statsToAverage.Clear();
+		
+		// Return averaged values
+		return avg;
+	}
+	
+	/// <summary>
+	/// Saves data to CSV file
+	/// </summary>
+	/// <param name="data"> Data to save </param>
+	protected void SaveToCsv(params object[] data)
+	{
+		// Check if file path was set
+		if (string.IsNullOrWhiteSpace(statsFileName))
+			return;
+		
+		// Check if directory exists
+		System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(statsFileName));
+
+		// Open .csv file to append data
+		System.IO.File.AppendAllText(statsFileName, string.Join("\t", data) + "\n");
 	}
 }

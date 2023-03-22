@@ -4,41 +4,78 @@ using System.Reflection;
 using UnityEngine;
 using static NodeType;
 using static Node;
+using static JPS.Direction;
 
 public class JPS : Algorithm
 {
+	/// <summary>
+	/// Enum representing possible directions
+	/// </summary>
+	public enum Direction { N, NE, E, SE, S, SW, W, NW }
+	
+	
 	/// <summary>
 	/// Class represents single jump point in the JPS algorithm
 	/// </summary>
 	class JumpPoint
 	{
 		// Flags indicating whether or not there is another jump point in that direction
-		public bool N, NE, E, SE, S, SW, W, NW;
+		public bool[] flags = new bool[8];
+		
+		// Fields for easier access
+		public bool N { get => this[Direction.N]; set => this[Direction.N] = value; }
+		public bool NE { get => this[Direction.NE]; set => this[Direction.NE] = value; }
+		public bool E { get => this[Direction.E]; set => this[Direction.E] = value; }
+		public bool SE { get => this[Direction.SE]; set => this[Direction.SE] = value; }
+		public bool S { get => this[Direction.S]; set => this[Direction.S] = value; }
+		public bool SW { get => this[Direction.SW]; set => this[Direction.SW] = value; }
+		public bool W { get => this[Direction.W]; set => this[Direction.W] = value; }
+		public bool NW { get => this[Direction.NW]; set => this[Direction.NW] = value; }
+		
+		
+		
 		
 		public override string ToString()
 		{
 			// Prepare result variable
 			string result = string.Empty;
 
-			// Add directions to result string
-			if (N)  result += "N, ";
-			if (NE) result += "NE, ";
-			if (E)  result += "E, ";
-			if (SE) result += "SE, ";
-			if (S)  result += "S, ";
-			if (SW) result += "SW, ";
-			if (W)  result += "W, ";
-			if (NW) result += "NW, ";
+			// Append values
+			for (int i = 0; i < 8; i++)
+				if (this[i])
+					result += (Direction)i + ", ";
 			
 			// Return final value
 			return result;
+		}
+		
+		/// <summary>
+		/// [] operator
+		/// </summary>
+		/// <param name="direction"> Direction of the movement </param>
+		/// <returns> Whether or not flag in this direction is set </returns>
+		public bool this[Direction direction]
+		{
+			get => flags[(int)direction];
+			set => flags[(int)direction] = value;
+		}
+		
+		/// <summary>
+		/// [] operator
+		/// </summary>
+		/// <param name="direction"> Direction of the movement </param>
+		/// <returns> Whether or not flag in this direction is set </returns>
+		public bool this[int direction]
+		{
+		get => flags[direction];
+		set => flags[direction] = value;
 		}
 	}
 	
 	/// <summary>
 	/// Class represents single node in a JPS map
 	/// </summary>
-	class DistancenNode
+	class DistanceNode
 	{
 		[Tooltip("Memory usage per single JpsNode")]
 		public const int MEMORY_USAGE = 4 + 4 + (8 * 5) + 1;
@@ -50,10 +87,20 @@ public class JPS : Algorithm
 		int x, y;
 		
 		// Distances to jump points or walls
-		public int? N, NE, E, SE, S, SW, W, NW;
+		public int?[] distances = new int?[8];
 		
 		// Flag indiacting whether or not node is free
 		public bool free = true;
+		
+		// Fields for easier access
+		public int? N { get => this[Direction.N]; set => this[Direction.N] = value; }
+		public int? NE { get => this[Direction.NE]; set => this[Direction.NE] = value; }
+		public int? E { get => this[Direction.E]; set => this[Direction.E] = value; }
+		public int? SE { get => this[Direction.SE]; set => this[Direction.SE] = value; }
+		public int? S { get => this[Direction.S]; set => this[Direction.S] = value; }
+		public int? SW { get => this[Direction.SW]; set => this[Direction.SW] = value; }
+		public int? W { get => this[Direction.W]; set => this[Direction.W] = value; }
+		public int? NW { get => this[Direction.NW]; set => this[Direction.NW] = value; }
 	
 		
 		
@@ -64,7 +111,7 @@ public class JPS : Algorithm
 		/// </summary>
 		/// <param name="row"> Y coordinate of the node</param>
 		/// <param name="col"> X coordinate of the node </param>
-		public DistancenNode(int row, int col)
+		public DistanceNode(int row, int col)
 		{
 			// Assign coords
 			x = col;
@@ -81,17 +128,17 @@ public class JPS : Algorithm
 		/// <param name="S"> Distance to jump point or wall in the south </param>
 		/// <param name="W"> Distance to jump point or wall in the west </param>
 		/// <returns></returns>
-		public DistancenNode(int row, int col, int N, int E, int S, int W)
+		public DistanceNode(int row, int col, int N, int E, int S, int W)
 		{
 			// Assign coords
 			x = col;
 			y = row;
 			
 			// Assign distances
-			this.N = N;
-			this.E = E;
-			this.S = S;
-			this.W = W;
+			this[0] = N;
+			this[2] = E;
+			this[4] = S;
+			this[6] = W;
 		}
 		
 		public override string ToString()
@@ -100,16 +147,34 @@ public class JPS : Algorithm
 			string result = string.Empty;
 			
 			// Add directions to result string
-			if (N.HasValue)  result += "N" + N.Value + ", ";
-			if (NE.HasValue) result += "NE" + NE.Value + ", ";
-			if (E.HasValue)  result += "E" + E.Value + ", ";
-			if (SE.HasValue) result += "SE" + SE.Value + ", ";
-			if (S.HasValue)  result += "S" + S.Value + ", ";
-			if (SW.HasValue) result += "SW" + SW.Value + ", ";
-			if (W.HasValue)  result += "W" + W.Value + ", ";
-			if (NW.HasValue) result += "NW" + NW.Value + ", ";
+			for (int i = 0; i < 8; i++)
+				if (this[i].HasValue)
+					result += (Direction)i + this[i].Value + ", ";
 			
+			// Return final result
 			return result;
+		}
+		
+		/// <summary>
+		/// [] operator
+		/// </summary>
+		/// <param name="direction"> Direction of the movement </param>
+		/// <returns> Distance in given direction </returns>
+		public int? this[Direction direction]
+		{
+		get => distances[(int)direction];
+		set => distances[(int)direction] = value;
+		}
+		
+		/// <summary>
+		/// [] operator
+		/// </summary>
+		/// <param name="direction"> Direction of the movement </param>
+		/// <returns> Distance in given direction </returns>
+		public int? this[int direction]
+		{
+		get => distances[direction];
+		set => distances[direction] = value;
 		}
 		
 		/// <summary>
@@ -155,9 +220,12 @@ public class JPS : Algorithm
 	
 	class NodeWithDir : Node
 	{
-		public enum Dir { N, NE, E, SE, S, SW, W, NW }
+		public enum Dir : byte { None, N, NE, E, SE, S, SW, W, NW }
 		
-		public Dir? travelDir = null;
+		new public const int MEMORY_USAGE = Node.MEMORY_USAGE + 1;
+		// Dir - declared as byte so will use 1 byte
+		
+		public Dir travelDir = Dir.None;
 		
 		public NodeWithDir(int x, int y, float cost) : base(x, y, cost) { }
 
@@ -186,7 +254,7 @@ public class JPS : Algorithm
 	JumpPoint[,] diagonal;
  	
 	[Tooltip("Array with information about distances")]
-	DistancenNode[,] distanceMap;
+	DistanceNode[,] distanceMap;
 
 	[Tooltip("Time required for algorithm to find path in a distance map")]
 	float timeToFindPath;
@@ -273,69 +341,168 @@ public class JPS : Algorithm
 	/// Solves current problem using A* algorithm
 	/// </summary>
 	/// <param name="heuristic"> Heuristic used to calculate node's cost </param>
-	public override IEnumerator Solve(Heuristic heuristic)
-	{
-		// Prepare timer
-		var timer = new System.Diagnostics.Stopwatch();
-		timer.Start();
+	/// <param name="howMuchToRemove"> How many worst records has to be deleted before averaging </param>
+	public override IEnumerator Solve(Heuristic heuristic, int iterations, int howMuchToRemove)
+	{	
+		// Set flag
+		Solver.isRunning = true;
 		
-		// Save heuristic
-		this.heuristic = heuristic;
+		// Prepare variables that will store results
+		bool pathFound = false;
+		float timeToGenerateMap = 0;
+		int nodesLength = 0;
+		float pathLength = 0;
+		int nodesAllocated = 0;
 		
-		// Generate map with all jump points and distances
-		GenerateJpsMap();
-		timer.Stop();
-		float timeToGenerateMap = (float)timer.Elapsed.TotalMilliseconds;
-		timer.Reset();
-			
-		// Set details button action to generate file with detailed data
-		DetailsButtonManager.EnableButton();
-		DetailsButtonManager.ButtonComponent.onClick.RemoveAllListeners();
-		DetailsButtonManager.ButtonComponent.onClick.AddListener(() => Solver.Instance.StartCoroutine(PrintMapToFile()));
-		
-		// Get final node in the path
-		yield return FindPath();
-		
-		// Check if path was found
-		if (finalNode == null)
+		for (int i = 0; i < iterations; i++)
 		{
-			ResultDisplayer.SetText(1, "FAILURE:\nPath not found.");
-			ResultDisplayer.SetText(2, "");
-			ResultDisplayer.SetText(3, "");
-			yield break;
+			// Prepare timer
+			var timer = new System.Diagnostics.Stopwatch();
+			timer.Start();
+			
+			// Save heuristic
+			this.heuristic = heuristic;
+			
+			// Generate map with all jump points and distances
+			GenerateJpsMap();
+			timer.Stop();
+			timeToGenerateMap = (float)timer.Elapsed.TotalMilliseconds;
+			timer.Reset();
+				
+			// Set details button action to generate file with detailed data
+			DetailsButtonManager.EnableButton();
+			DetailsButtonManager.ButtonComponent.onClick.RemoveAllListeners();
+			DetailsButtonManager.ButtonComponent.onClick.AddListener(() => Solver.Instance.StartCoroutine(PrintMapToFile()));
+			
+			// Get final node in the path
+			yield return FindPath();
+			
+			// Check if path was found
+			if (finalNode == null)
+			{
+				// Set flag
+				pathFound = false;
+				
+				// Display info about failure
+				ResultDisplayer.SetText(1, "FAILURE:\nPath not found.");
+				ResultDisplayer.SetText(2, "");
+				ResultDisplayer.SetText(3, "");
+			}
+			else
+			{
+				// Set flag
+				pathFound = true;
+				
+				// Get amount of nodes allocated BEFORE painting path
+				// Doing so after will result in middle nodes in a path to be counted as allocated too
+				nodesAllocated = Displayer.GetAmountOfNodesAllocated();
+				
+				// Print path
+				PrintPath(finalNode, out nodesLength, out pathLength);
+				
+				// Prepare messages to display
+				string msg1 = "TIME";
+				msg1 += "\nMap creation:\t" + timeToGenerateMap.ToString("f3") + " ms";
+				msg1 += "\nTo find path:\t\t" + timeToFindPath.ToString("f3") + " ms";
+				msg1 += "\nTotal:\t\t\t" + (timeToGenerateMap + timeToFindPath).ToString("f3") + " ms";
+				msg1 += "\n\nPATH LENGTH";
+				msg1 += "\nNodes:\t" + nodesLength;
+				msg1 += "\nDistance:\t" + pathLength.ToString("f2");
+				
+				string msg2 = "NODES AMOUNT";
+				msg2 += "\nAnalyzed:\t\t" + nodesAnalyzed;
+				msg2 += "\nAllocated:\t\t" + nodesAllocated;
+				
+				string msg3 = "MEMORY USAGE";
+				msg3 += "\nPer node:\t\t" + Node.MEMORY_USAGE + " B";
+				msg3 += "\nPer map point:\t" + DistanceNode.MEMORY_USAGE + " B";
+				msg3 += "\nFor nodes:\t\t" + (Node.MEMORY_USAGE * nodesAllocated) + " B";
+				msg3 += "\nFull map:\t\t" + (DistanceNode.MEMORY_USAGE * Map.width * Map.height) + " B";
+				msg3 += "\nTotal:\t\t\t" + ((Node.MEMORY_USAGE * nodesAllocated) + (DistanceNode.MEMORY_USAGE * Map.width * Map.height)) + " B";
+				
+				// Print messages
+				ResultDisplayer.SetText(1, msg1);
+				ResultDisplayer.SetText(2, msg2);
+				ResultDisplayer.SetText(3, msg3);
+				
+				// Save stats for later average
+				AddValuesToAverage(timeToGenerateMap, timeToFindPath);
+			}
 		}
 		
-		// Get amount of nodes allocated BEFORE painting path
-		// Doing so after will result in middle nodes in a path to be counted as allocated too
-		int nodesAllocated = Displayer.GetAmountOfNodesAllocated();
+		// All iterations finished, now get an avg time
+		float[] times = AverageValues(howMuchToRemove, 1);
+		if (times == null)
+		{
+			timeToGenerateMap = float.PositiveInfinity;
+			timeToFindPath = float.PositiveInfinity;
+		}
+		else
+		{
+			timeToGenerateMap = times[0];
+			timeToFindPath = times[1];
+		}
 		
-		// Print path
-		PrintPath(finalNode, out int nodesLength, out float pathLength);
+		// First, check if file exists
+		if (System.IO.File.Exists(statsFileName) == false)
+		{
+			// File does not exist, create it and add headers
+			SaveToCsv(
+				"Map Name",
+				"Start Coords",
+				"Goal Coords",
+				"Heuristic",
+				"Path Found",
+				"Precalc Time",
+				"Solve Time",
+				"Total Time",
+				"Path Length (Nodes)",
+				"Path Length (Distance)",
+				"Analyzed",
+				"Allocated",
+				"Memory (B)",
+				"Goal Bounding",
+				"Cost Overwrite",
+				"Error Margin");
+		}
+			
+		if (pathFound == false)
+		{
+			// If path was not found, write just data about map
+			SaveToCsv(
+				LoadMap.mapName,
+				StartGoalManager.StartToString(),
+				StartGoalManager.GoalToString(),
+				AlgorithmSelector.GetHeuristic().name,
+				false,
+				"---", "---", "---", "---", "---", "---", "---", "---", "---", "---", "---"
+			);
+		}
+		else
+		{
+			// If path was found, save all statistics
+			SaveToCsv(
+				LoadMap.mapName,
+				StartGoalManager.StartToString(),
+				StartGoalManager.GoalToString(),
+				AlgorithmSelector.GetHeuristic().name,
+				true,
+				timeToGenerateMap,
+				timeToFindPath,
+				timeToGenerateMap + timeToFindPath,
+				nodesLength,
+				pathLength,
+				nodesAnalyzed,
+				nodesAllocated,
+				((Node.MEMORY_USAGE * nodesAllocated) + (DistanceNode.MEMORY_USAGE * Map.width * Map.height)),
+				GoalBoundingManager.shouldApply ? GoalBoundingManager.strength : "---",
+				GoalBoundingManager.shouldApply ? CostOverwriteManager.shouldOverwrite : "---",
+				GoalBoundingManager.shouldApply && CostOverwriteManager.shouldOverwrite ? (CostOverwriteManager.errorMargin - 1) * 100 + "%" : "---"
+			);
+		}
 		
-		// Prepare messages to display
-		string msg1 = "TIME";
-		msg1 += "\nMap creation:\t" + timeToGenerateMap.ToString("f3") + " ms";
-		msg1 += "\nTo find path:\t\t" + timeToFindPath.ToString("f3") + " ms";
-		msg1 += "\nTotal:\t\t\t" + (timeToGenerateMap + timeToFindPath).ToString("f3") + " ms";
-		msg1 += "\n\nPATH LENGTH";
-		msg1 += "\nNodes:\t" + nodesLength;
-		msg1 += "\nDistance:\t" + pathLength.ToString("f2");
-		
-		string msg2 = "NODES AMOUNT";
-		msg2 += "\nAnalyzed:\t\t" + nodesAnalyzed;
-		msg2 += "\nAllocated:\t\t" + nodesAllocated;
-		
-		string msg3 = "MEMORY USAGE";
-		msg3 += "\nPer node:\t\t" + Node.MEMORY_USAGE + " B";
-		msg3 += "\nPr map point:\t" + DistancenNode.MEMORY_USAGE + " B";
-		msg3 += "\nFull path:\t\t" + (Node.MEMORY_USAGE * nodesLength) + " B";
-		msg3 += "\nFull map:\t\t" + (DistancenNode.MEMORY_USAGE * Map.width * Map.height) + " B";
-		msg3 += "\nTotal:\t\t\t" + ((Node.MEMORY_USAGE * nodesLength) + (DistancenNode.MEMORY_USAGE * Map.width * Map.height)) + " B";
-		
-		// Print messages
-		ResultDisplayer.SetText(1, msg1);
-		ResultDisplayer.SetText(2, msg2);
-		ResultDisplayer.SetText(3, msg3);
+		// Set flag
+		Solver.isRunning = false;
 	}
 	
 	/// <summary>
@@ -354,56 +521,39 @@ public class JPS : Algorithm
 		// Prepare variable that will store found coordinates. If after searching this value is still null, that means that no target jump point was found
 		Vector2Int? newNodeCoords = null;
 		
-		// Precalculate absolute value fo teh distance
+		// Precalculate absolute value to the distance
 		int distanceAbs = Mathf.Abs(distance);
 		
 		if (x == node.x || y == node.y)
 		{
-			// Movement is cardinal, check if there is straight path to goal
-			if ((x == StartGoalManager.goalCol || y == StartGoalManager.goalRow) &&
-				Mathf.Abs(x - StartGoalManager.goalCol + y - StartGoalManager.goalRow) <= distanceAbs)
+			if (x == node.x && node.x == StartGoalManager.goalCol)
 			{
-				// There is straight path to the goal, save coordinates for a new Target Jump Point
-				newNodeCoords = new Vector2Int(StartGoalManager.goalCol, StartGoalManager.goalRow);
-			}
-			else
-			{
-				// Check if we are trying to move towards the goal
-				int movementDirX = x - node.x;
-				int movementDirY = y - node.y;
-				int goalDirX = StartGoalManager.goalCol - node.x;
-				int goalDirY = StartGoalManager.goalRow - node.y;
-				
-				if (movementDirX * goalDirX > 0 || movementDirY * goalDirY > 0)
+				// Movement is vertical and goal is in this column
+	
+				if (direction == NodeWithDir.Dir.N && StartGoalManager.goalRow < node.y && node.y - StartGoalManager.goalRow <= distanceAbs)
 				{
-					// Movement and goal direction have the same signs
-					// Calculate desired length of the movement
-					int	desiredMovementLength;
-					
-					if (movementDirX == 0)
-						desiredMovementLength = Mathf.Abs(movementDirY) - Mathf.Abs(goalDirX);
-					else
-						desiredMovementLength = Mathf.Abs(movementDirX) - Mathf.Abs(goalDirY);
-					
-					// Check if we can go such distance
-					if (desiredMovementLength <= distanceAbs)
-					{
-						int newX, newY;
-						
-						if (movementDirX == 0)
-						{
-							newX = node.x;
-							newY = node.y + (desiredMovementLength * Sign(movementDirY));
-						}
-						else
-						{
-							newX = node.x + (desiredMovementLength * Sign(movementDirX));
-							newY = node.y;
-						}
-						
-						// Assign coordinates
-						//newNodeCoords = new Vector2Int(newX, newY);
-					}
+					// We are moving north, goal is in the north and distance to goal is less than distance to wall/jump point				
+					newNodeCoords = new Vector2Int(StartGoalManager.goalCol, StartGoalManager.goalRow);
+				}
+				else if (direction == NodeWithDir.Dir.S && StartGoalManager.goalRow > node.y && StartGoalManager.goalRow - node.y <= distanceAbs)
+				{
+					// We are moving south, goal is in the south and distance to goal is less than distance to wall/jump point				
+					newNodeCoords = new Vector2Int(StartGoalManager.goalCol, StartGoalManager.goalRow);
+				}
+			}
+			else if (y == node.y && node.y == StartGoalManager.goalRow)
+			{
+				// Movement is horizontal and goal is in this row
+				
+				if (direction == NodeWithDir.Dir.W && StartGoalManager.goalCol < node.x && node.x - StartGoalManager.goalCol <= distance)
+				{
+					// We are moving west, goal is in the west and distance to goal is less than distance to wall/jump point
+					newNodeCoords = new Vector2Int(StartGoalManager.goalCol, StartGoalManager.goalRow);
+				}
+				else if (direction == NodeWithDir.Dir.E && StartGoalManager.goalCol > node.x && StartGoalManager.goalCol - node.x <= distanceAbs)
+				{
+					// We are moving east, goal is in then east and distance to goal is less than distance to wall/jump point
+					newNodeCoords = new Vector2Int(StartGoalManager.goalCol, StartGoalManager.goalRow);
 				}
 			}
 		}
@@ -471,7 +621,7 @@ public class JPS : Algorithm
 			heuristic.GetCosts(newNodeCoords.Value.x, newNodeCoords.Value.y, node, out float baseCost, out float goalBoundingCost);
 			
 			// Since cost overwriting is implemented in JPS+ by default, don't use error margin
-			if (goalBoundingCost < nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y].goalBoundCost)
+			if (goalBoundingCost * CostOverwriteManager.errorMargin < nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y].goalBoundCost)
 			{
 				// New node values are better, overwrite them
 				nodesVisited[newNodeCoords.Value.x, newNodeCoords.Value.y].parentNode = node;
@@ -499,7 +649,7 @@ public class JPS : Algorithm
 		list = new NodeSortedList(node);
 		
 		// Prepare array with information about previously visited nodes
-		nodesVisited = new NodeWithDir[Map.width, Map.height];
+		nodesVisited = new Array2D<Node>(Map.width, Map.height);
 		nodesVisited[StartGoalManager.startCol, StartGoalManager.startRow] = (Node)node;
 		
 		// Prepare variables that will store result
@@ -538,14 +688,14 @@ public class JPS : Algorithm
 			// Shortcut variables
 			int x = node.x;
 			int y = node.y;
-			DistancenNode dist = distanceMap[x, y];
+			DistanceNode dist = distanceMap[x, y];
 
 			// Expand in certain direction based on travel direction
 			int N, NE, E, SE, S, SW, W, NW;
 			
 			switch (node.travelDir)
 			{
-			case null:
+			case NodeWithDir.Dir.None:
 				// Prepare absolute values
 				N = Mathf.Abs(dist.N.Value);
 				NE = Mathf.Abs(dist.NE.Value);
@@ -731,7 +881,7 @@ public class JPS : Algorithm
 		
 		// Now let's find diagonal jump points
 		GetDiagonalJumpPoints();
-		
+
 		// Fill diagonal distances
 		CalculateDiagonalDistances();
 	}
@@ -890,159 +1040,145 @@ public class JPS : Algorithm
 	/// </summary>
 	void CalculateStraightDistances()
 	{
-		// Create array with distances' informations
-		distanceMap = new DistancenNode[Map.width, Map.height];
+		// Create array with distances
+		distanceMap = new DistanceNode[Map.width, Map.height];
 		
-		// Iterate through map
+		// Swipe horizontally
 		for (int row = 0; row < Map.height; row++)
+		{
+			// Prepare variables
+			int count = -1;
+			bool jumpPointLastSeen = false;
+			
+			// Iterate through map filling WEST direction
 			for (int col = 0; col < Map.width; col++)
 			{
-				// If node is obstacle, mark it as one
 				if (Map.map[row, col] == OBSTACLE)
 				{
-					distanceMap[col, row] = new DistancenNode(row, col);
-					distanceMap[col, row].free = false;		
+					// Node is obstacle, reset variables and go to next iteration
+					count = -1;
+					jumpPointLastSeen = false;
+					distanceMap[col, row] = new DistanceNode(row, col) { free = false };
 					continue;
 				}
+				count++;
 				
-				// Prepare variables that will store distances
-				int n, e, s, w;
+				// Create distance variable if there wasn't one
+				if (distanceMap[col, row] == null)
+					distanceMap[col, row] = new DistanceNode(col, row);
 				
-				// Prepare offset variable
-				int x;
-				
-				// Check NORTH distance
-				for (x = 1; ; x++)
+				// Set distance based on whether or not Jump Point was seen
+				distanceMap[col, row].W = jumpPointLastSeen ? count : -count;
+
+				if (primary[col, row] != null && primary[col, row].E)
 				{
-					// Check if node is outside of map
-					if (row - x < 0)
-					{
-						// We are outside of map, save distance as negative
-						n = -x + 1;
-						break;
-					
-						// SENSITIVE POint, originally only break was here
-					}
-						
-					// Check if node is a primary jump point that allows for movement in this direction
-					if (primary[col, row - x] != null && primary[col, row - x].S)
-					{
-						// We hit primary jump point, save distance and exit loop
-						n = x;
-						break;
-					}
-					
-					// Check if node is an obstacle
-					if (Map.map[row - x, col] == OBSTACLE)
-					{
-						// We hit wall, save distance as negative
-						n = -x + 1;
-						break;
-						
-						// SENSITIVE POint, originally only break was here
-					}
+					// We hit a Primary Jump Point, reset counter and set flag
+					count = 0;
+					jumpPointLastSeen = true;
 				}
-				
-				// Check SOUTH distance
-				for (x = 1; ; x++)
-				{
-					// Check if node is outside of map
-					if (row + x >= Map.height)
-					{
-						// We are outside of map, save distance as negative
-						s = -x + 1;
-						break;
-					
-						// SENSITIVE POint, originally only break was here
-					}
-						
-					// Check if node is a primary jump point that allows for movement in this direction
-					if (primary[col, row + x] != null && primary[col, row + x].N)
-					{
-						// We hit primary jump point, save distance and exit loop
-						s = x;
-						break;
-					}
-					
-					// Check if node is an obstacle
-					if (Map.map[row + x, col] == OBSTACLE)
-					{
-						// We hit wall, save distance as negative
-						s = -x + 1;
-						break;
-						
-						// SENSITIVE POint, originally only break was here
-					}
-				}
-				
-				// Check EAST distance
-				for (x = 1; ; x++)
-				{
-					// Check if node is outside of map
-					if (col + x >= Map.width)
-					{
-						// We are outside of map, save distance as negative
-						e = -x + 1;
-						break;
-					
-						// SENSITIVE POint, originally only break was here
-					}
-						
-					// Check if node is a primary jump point that allows for movement in this direction
-					if (primary[col + x, row] != null && primary[col + x, row].W)
-					{
-						// We hit primary jump point, save distance and exit loop
-						e = x;
-						break;
-					}
-					
-					// Check if node is an obstacle
-					if (Map.map[row, col + x] == OBSTACLE)
-					{
-						// We hit wall, save distance as negative
-						e = -x + 1;
-						break;
-						
-						// SENSITIVE POint, originally only break was here
-					}
-				}
-				
-				// Check WEST distance
-				for (x = 1; ; x++)
-				{
-					// Check if node is outside of map
-					if (col - x < 0)
-					{
-						// We are outside of map, save distance as negative
-						w = -x + 1;
-						break;
-					
-						// SENSITIVE POint, originally only break was here
-					}
-						
-					// Check if node is a primary jump point that allows for movement in this direction
-					if (primary[col - x, row] != null && primary[col - x, row].E)
-					{
-						// We hit primary jump point, save distance and exit loop
-						w = x;
-						break;
-					}
-					
-					// Check if node is an obstacle
-					if (Map.map[row, col - x] == OBSTACLE)
-					{
-						// We hit wall, save distance as negative
-						w = -x + 1;
-						break;
-						
-						// SENSITIVE POint, originally only break was here
-					}
-				}
-				
-				// Save distances
-				distanceMap[col, row] = new DistancenNode(row, col, n, e, s, w);
 			}
+			
+			// Reset variables
+			count = -1;
+			jumpPointLastSeen = false;
+			
+			// Iterate though map filling EAST directions
+			for (int col = Map.width - 1; col >= 0; col--)
+			{
+				if (Map.map[row, col] == OBSTACLE)
+				{
+					// Node is obstacle, reset variables and go to next iteration
+					count = -1;
+					jumpPointLastSeen = false;
+					distanceMap[col, row] = new DistanceNode(row, col);
+					distanceMap[col, row].free = false;
+					continue;
+				}
+				count++;
+				
+				// Create distance variable if there wasn't one
+				if (distanceMap[col, row] == null)
+					distanceMap[col, row] = new DistanceNode(col, row);
+					
+				// Set distance based on whether or not Jump Point was seen
+				distanceMap[col, row].E = jumpPointLastSeen ? count : -count;
+
+				if (primary[col, row] != null && primary[col, row].W)
+				{
+					// We hit a Primary Jump Point, reset counter and set flag
+					count = 0;
+					jumpPointLastSeen = true;
+				}
+			}
+		}
 		
+		// Swipe vertically
+		for (int col = 0; col < Map.width; col++)
+		{
+			// Prepare variables
+			int count = -1;
+			bool jumpPointLastSeen = false;
+			
+			// Iterate through map filling NORTH direction
+			for (int row = 0; row < Map.height; row++)
+			{
+				if (Map.map[row, col] == OBSTACLE)
+				{
+					// Node is obstacle, reset variables and go to next iteration
+					count = -1;
+					jumpPointLastSeen = false;
+					distanceMap[col, row] = new DistanceNode(row, col) { free = false };
+					continue;
+				}
+				count++;
+				
+				// Create distance variable if there wasn't one
+				if (distanceMap[col, row] == null)
+					distanceMap[col, row] = new DistanceNode(col, row);
+					
+				// Set distance based on whether or not Jump Point was seen
+				distanceMap[col, row].N = jumpPointLastSeen ? count : -count;
+
+				if (primary[col, row] != null && primary[col, row].S)
+				{
+					// We hit a Primary Jump Point, reset counter and set flag
+					count = 0;
+					jumpPointLastSeen = true;
+				}
+			}
+			
+			// Reset variables
+			count = -1;
+			jumpPointLastSeen = false;
+			
+			// Iterate though map filling SOUTH directions
+			for (int row = Map.height - 1; row >= 0; row--)
+			{
+				if (Map.map[row, col] == OBSTACLE)
+				{
+					// Node is obstacle, reset variables and go to next iteration
+					count = -1;
+					jumpPointLastSeen = false;
+					distanceMap[col, row] = new DistanceNode(row, col) { free = false };
+					continue;
+				}
+				count++;
+				
+				// Create distance variable if there wasn't one
+				if (distanceMap[col, row] == null)
+					distanceMap[col, row] = new DistanceNode(col, row);
+					
+				// Set distance based on whether or not Jump Point was seen
+				distanceMap[col, row].S = jumpPointLastSeen ? count : -count;
+
+				if (primary[col, row] != null && primary[col, row].N)
+				{
+					// We hit a Primary Jump Point, reset counter and set flag
+					count = 0;
+					jumpPointLastSeen = true;
+				}
+			}
+		}
 	}
 	
 	/// <summary>
@@ -1086,7 +1222,6 @@ public class JPS : Algorithm
 						
 						// Set flag and save distance
 						diagonal[col + x, row - x].SW = true;
-						distanceMap[col + x, row - x].SW = x;
 					}
 				}
 				
@@ -1110,7 +1245,6 @@ public class JPS : Algorithm
 							
 						// Set flag and save distance
 						diagonal[col + x, row + x].NW = true;
-						distanceMap[col + x, row + x].NW = x;
 					}
 				}
 				
@@ -1134,7 +1268,6 @@ public class JPS : Algorithm
 							
 						// Set flag and save distance
 						diagonal[col - x, row + x].NE = true;
-						distanceMap[col - x, row + x].NE = x;
 					}
 				}
 				
@@ -1158,7 +1291,6 @@ public class JPS : Algorithm
 							
 						// Set flag and save distance
 						diagonal[col - x, row - x].SE = true;
-						distanceMap[col - x, row - x].SE = x;
 					}
 				}
 			}
@@ -1169,110 +1301,117 @@ public class JPS : Algorithm
 	/// </summary>
 	void CalculateDiagonalDistances()
 	{
-		// Iterate through map
+		// Swipe from NORTH
 		for (int row = 0; row < Map.height; row++)
+		{
+			// Swipe WEST
 			for (int col = 0; col < Map.width; col++)
 			{
-				// Check top-right nodes
-				if (distanceMap[col, row].NE.HasValue == false)
-				{
-					// Caulculate distance
-					for (int x = 1; ; x++)
-					{
-						// Check if we got outside of map or hit a wall
-						if (row - x < 0 || col + x >= Map.width ||
-							Map.map[row - x + 1, col + x] == OBSTACLE ||
-							Map.map[row - x, col + x - 1] == OBSTACLE ||
-							Map.map[row - x, col + x] == OBSTACLE)
-						{
-							distanceMap[col, row].NE = -x + 1;
-							break;
-						}
-						
-						// Check if we met another node that we can use to calculate distance
-						if (distanceMap[col + x, row - x].NE.HasValue)
-						{
-							distanceMap[col, row].NE = distanceMap[col + x, row - x].NE.Value - x;
-							break;
-						}
-					}
-				}
+				// Skip obstacles
+				if (Map.map[row, col] == OBSTACLE)
+					continue;
 				
-				// Check bottom-right nodes
-				if (distanceMap[col, row].SE.HasValue == false)
+				// Swipe NORTH-WEST
+				if (row == 0 || col == 0 || Map.map[row, col - 1] == OBSTACLE || Map.map[row - 1, col] == OBSTACLE || Map.map[row - 1, col - 1] == OBSTACLE)
 				{
-					// Calculate distance
-					for (int x = 1; ; x++)
-					{
-						// Check if we got outside of map or hit a wall
-						if (row + x >= Map.height || col + x >= Map.width ||
-							Map.map[row + x - 1, col + x] == OBSTACLE ||
-							Map.map[row + x, col + x - 1] == OBSTACLE ||
-							Map.map[row + x, col + x] == OBSTACLE)
-						{
-							distanceMap[col, row].SE = -x + 1;
-							break;
-						}
-						
-						// Check if we met another ndde that we can use to calculate distance
-						if (distanceMap[col + x, row + x].SE.HasValue)
-						{
-							distanceMap[col, row].SE = distanceMap[col + x, row + x].SE.Value - x;
-							break;
-						}
-					}
+					// We hit a wall right away
+					distanceMap[col, row].NW = 0;
 				}
-				
-				// Check bottom-left nodes
-				if (distanceMap[col, row].SW.HasValue == false)
+				else if (Map.map[row, col - 1] == FREE && Map.map[row - 1, col] == FREE && (distanceMap[col - 1, row - 1].N > 0 || distanceMap[col - 1, row - 1].W > 0))
 				{
-					// Calculate distance
-					for (int x = 1; ; x++)
-					{
-						// Check if we got outisde of map or hit a wall
-						if (row + x >= Map.height || col - x < 0 ||
-							Map.map[row + x - 1, col - x] == OBSTACLE ||
-							Map.map[row + x, col - x + 1] == OBSTACLE ||
-							Map.map[row + x, col - x] == OBSTACLE)
-						{
-							distanceMap[col, row].SW = -x + 1;
-							break;
-						}
-						
-						// Check if we met another node that we can use to calculate distance
-						if (distanceMap[col - x, row + x].SW.HasValue)
-						{
-							distanceMap[col, row].SW = distanceMap[col - x, row + x].SW.Value - x;
-							break;
-						}
-					}
+					// Jump point right away
+					distanceMap[col, row].NW = 1;
 				}
-				
-				// Check top-left nodes
-				if (distanceMap[col, row].NW.HasValue == false)
+				else
 				{
-					// Calculate distance
-					for (int x = 1; ; x++)
-					{
-						// Check if we got outside of map or hit a wall
-						if (row - x < 0 || col - x < 0 ||
-							Map.map[row - x + 1, col - x] == OBSTACLE ||
-							Map.map[row - x, col - x + 1] == OBSTACLE ||
-							Map.map[row - x, col - x] ==  OBSTACLE)
-						{
-							distanceMap[col, row].NW = -x + 1;
-							break;
-						}
-						
-						// Check if we met another node that we can use to calculate distance
-						if (distanceMap[col - x, row - x].NW.HasValue)
-						{
-							distanceMap[col, row].NW = distanceMap[col - x, row - x].NW.Value - x;
-							break;
-						}
-					}
+					// Increment from last node we marked
+					int jumpDistance = distanceMap[col - 1, row - 1].NW.Value;
+					distanceMap[col, row].NW = jumpDistance > 0 ? jumpDistance + 1 : jumpDistance - 1;
 				}
 			}
+			
+			// Swipe EAST
+			for (int col = Map.width - 1; col >= 0; col--)
+			{
+				// Skip obstacles
+				if (Map.map[row, col] == OBSTACLE)
+					continue;
+				
+				// Swipe NORTH-EAST
+				if (row == 0 || col == Map.width - 1 || Map.map[row, col + 1] == OBSTACLE || Map.map[row - 1, col] == OBSTACLE || Map.map[row - 1, col + 1] == OBSTACLE)
+				{
+					// We hit a wall right away
+					distanceMap[col, row].NE = 0;
+				}
+				else if (Map.map[row, col + 1] == FREE && Map.map[row - 1, col] == FREE && (distanceMap[col + 1, row - 1].N > 0 || distanceMap[col + 1, row - 1].E > 0))
+				{
+					// Jump point right away
+					distanceMap[col, row].NE = 1;
+				}
+				else
+				{
+					// Increment from last node we marked
+					int jumpDistance = distanceMap[col + 1, row - 1].NE.Value;
+					distanceMap[col, row].NE = jumpDistance > 0 ? jumpDistance + 1 : jumpDistance - 1;
+				}
+			}
+		}
+		
+		// Swipe from SOUTH
+		for (int row = Map.height - 1; row >= 0; row--)
+		{
+			// Swipe WEST
+			for (int col = 0; col < Map.width; col++)
+			{
+				// Skip obstacles
+				if (Map.map[row, col] == OBSTACLE)
+					continue;
+				
+				// Swipe SOUTH-WEST
+				if (row == Map.height - 1 || col == 0 || Map.map[row, col - 1] == OBSTACLE || Map.map[row + 1, col] == OBSTACLE || Map.map[row + 1, col - 1] == OBSTACLE)
+				{
+					// We hit a wall right away
+					distanceMap[col, row].SW = 0;
+				}
+				else if (Map.map[row, col - 1] == FREE && Map.map[row + 1, col] == FREE && (distanceMap[col - 1, row + 1].S > 0 || distanceMap[col - 1, row + 1].W > 0))
+				{
+					// Jump point right away
+					distanceMap[col, row].SW = 1;
+				}
+				else
+				{
+					// Increment from last node we marked
+					int jumpDistance = distanceMap[col - 1, row + 1].SW.Value;
+					distanceMap[col, row].SW = jumpDistance > 0 ? jumpDistance + 1 : jumpDistance - 1;
+				}
+			}
+			
+			// Swipe EAST
+			for (int col = Map.width - 1; col >= 0; col--)
+			{
+				// Skip obstacles
+				if (Map.map[row, col] == OBSTACLE)
+					continue;
+				
+				// Swipe SOUTH-EAST
+				if (row == Map.height - 1 || col == Map.width - 1 || Map.map[row, col + 1] == OBSTACLE || Map.map[row + 1, col] == OBSTACLE || Map.map[row + 1, col + 1] == OBSTACLE)
+				{
+					// We hit a wall right away
+					distanceMap[col, row].SE = 0;
+				}
+				else if (Map.map[row, col + 1] == FREE && Map.map[row + 1, col] == FREE && (distanceMap[col + 1, row + 1].S > 0 || distanceMap[col + 1, row + 1].E > 0))
+				{
+					// Jump point right away
+					distanceMap[col, row].SE = 1;
+				}
+				else
+				{
+					// Increment from last node we marked
+					int jumpDistance = distanceMap[col + 1, row + 1].SE.Value;
+					distanceMap[col, row].SE = jumpDistance > 0 ? jumpDistance + 1 : jumpDistance - 1;
+				}
+			}
+		}
 	}
 	
 	/// <summary>
@@ -1342,9 +1481,11 @@ public class JPS : Algorithm
 	
 	public void ClearLog()
 	{
+		#if UNITY_EDITOR
 		var assembly = Assembly.GetAssembly(typeof(UnityEditor.Editor));
 		var type = assembly.GetType("UnityEditor.LogEntries");
 		var method = type.GetMethod("Clear");
 		method.Invoke(new object(), null);
+		#endif
 	}
 }

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class ChunkSizeManager : MonoBehaviour
 {
 	[Tooltip("Singleton")]
-	static ChunkSizeManager Instance;
+	public static ChunkSizeManager Instance;
 	
 	[Tooltip("Slider to get value from")]
 	public Slider slider;
@@ -35,7 +35,7 @@ public class ChunkSizeManager : MonoBehaviour
 	/// <summary>
 	/// Invoked when slider value changes. Saves value to size field
 	/// </summary>
-	void UpdateSizeValue(float value)
+	public void UpdateSizeValue(float value)
 	{
 		// Save value
 		ChunkSize = (ushort)value;

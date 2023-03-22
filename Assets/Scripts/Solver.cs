@@ -32,7 +32,9 @@ public class Solver : MonoBehaviour
 	[Tooltip("Solver's coroutine")]
 	Coroutine solverCoroutine;
 	
-	
+	[Tooltip("Flag indicating whether or not solver is running")]
+	public static bool isRunning = false;
+
 	
 	
 	
@@ -77,11 +79,303 @@ public class Solver : MonoBehaviour
 	/// </summary>
 	public void Solve()
 	{
-		// Clear path displayer
-		Displayer.Instance.ClearPathLayer();
+		// Do nothing if solver is runnning
+		if (isRunning)
+			return;
 		
-		// Start solving coroutine
-		solverCoroutine = StartCoroutine(AlgorithmSelector.GetAlgorithm().Solve(AlgorithmSelector.GetHeuristic()));
+		// Clear previous simulation's results
+		Clear();
+		
+		// Run simulation
+		solverCoroutine = StartCoroutine(AlgorithmSelector.GetAlgorithm().Solve(AlgorithmSelector.GetHeuristic(), 1, 0));
+	}
+	
+	/// <summary>
+	/// Solves multiple times using different parameters to give average statistics
+	/// </summary>
+	public void TotalSolve()
+	{
+		// Do nothing if solver is runnning
+		if (isRunning)
+			return;
+		
+		// Clear previous simulation's results
+		Clear();
+		
+		// Run multiple simulations
+		StartCoroutine(SolveWithParams());
+	}
+	
+	/// <summary>
+	/// Solves given pathfinding problem with changing parameters
+	/// </summary>
+	/// <returns></returns>
+	public IEnumerator SolveWithParams()
+	{
+		// Extract data
+		string mapName = LoadMap.mapName;
+		string startCoords = "S" + StartGoalManager.startCol +"x" + StartGoalManager.startRow;
+		string goalCoords = "G" + StartGoalManager.goalCol + "x" + StartGoalManager.goalRow;
+		string dirName = "Statistics/" + mapName + "_" + startCoords + "_" + goalCoords + "/";
+		
+		// If such directory already exists, remove old data
+		if (System.IO.Directory.Exists(dirName))
+			System.IO.Directory.Delete(dirName, true);
+		
+		// Create folder for results
+		System.IO.Directory.CreateDirectory(dirName);
+		
+		// Set file names
+		AStar.Instance.statsFileName = dirName + "AStar.csv";
+		HPAStar.Instance.statsFileName = dirName + "HPAStar.csv";
+		JPS.Instance.statsFileName = dirName + "JPS.csv";
+		
+		// Prepare algorithm changing actions
+		var algorithChangers = new System.Action[] {
+			() => { AlgorithmSelector.Instance.algorithmDropdown.value = 0; },
+			() => { AlgorithmSelector.Instance.algorithmDropdown.value = 1; },
+			() => { AlgorithmSelector.Instance.algorithmDropdown.value = 2; },
+		};
+		
+		// Take screenshot of the map
+		SaveTextureToPng.StaticSaveToPng(dirName + mapName + "_" + startCoords + "_" + goalCoords + ".png");
+		
+		
+		// Run solver for each algorithm
+		foreach (var algorithm in algorithChangers)
+		{
+			// Change algorithm
+			algorithm.Invoke();
+		
+			// Prepare heuristic changers
+			var heuristicChangers = new System.Action[] {
+				() => { AlgorithmSelector.Instance.heuristicDropdown.value = 0; },
+				() => { AlgorithmSelector.Instance.heuristicDropdown.value = 1; },
+			};
+				
+			// Run solver for each heuristic
+			foreach (var heuristic in heuristicChangers)
+			{
+				// Change heuristic
+				heuristic.Invoke();
+				
+				// HPA* needs additional operations that will change chunk size, so operations list will differ based on selected algorithm
+				System.Action[] operations = null;
+				if (AlgorithmSelector.GetAlgorithm().name != "HPA*")
+				{
+					// Prepare operations
+					operations = new System.Action[] {
+						() => { GoalBoundingManager.Instance.slider.value = 0; CostOverwriteManager.Instance.toggle.isOn = false; CostOverwriteManager.Instance.UpdateErrorMargin(0); },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.toggle.isOn = true; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+					};
+				}
+				else
+				{
+					// Prepare operations
+					operations = new System.Action[] {
+						() => { ChunkSizeManager.Instance.slider.value = 2; GoalBoundingManager.Instance.slider.value = 0; CostOverwriteManager.Instance.toggle.isOn = false; CostOverwriteManager.Instance.UpdateErrorMargin(0); },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.toggle.isOn = true; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { ChunkSizeManager.Instance.slider.value = 3; GoalBoundingManager.Instance.slider.value = 0; CostOverwriteManager.Instance.toggle.isOn = false; CostOverwriteManager.Instance.UpdateErrorMargin(0); },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.toggle.isOn = true; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { ChunkSizeManager.Instance.slider.value = 4; GoalBoundingManager.Instance.slider.value = 0; CostOverwriteManager.Instance.toggle.isOn = false; CostOverwriteManager.Instance.UpdateErrorMargin(0); },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.toggle.isOn = true; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { ChunkSizeManager.Instance.slider.value = 6; GoalBoundingManager.Instance.slider.value = 0; CostOverwriteManager.Instance.toggle.isOn = false; CostOverwriteManager.Instance.UpdateErrorMargin(0); },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.toggle.isOn = true; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { ChunkSizeManager.Instance.slider.value = 8; GoalBoundingManager.Instance.slider.value = 0; CostOverwriteManager.Instance.toggle.isOn = false; CostOverwriteManager.Instance.UpdateErrorMargin(0); },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.toggle.isOn = true; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { ChunkSizeManager.Instance.slider.value = 12; GoalBoundingManager.Instance.slider.value = 0; CostOverwriteManager.Instance.toggle.isOn = false; CostOverwriteManager.Instance.UpdateErrorMargin(0); },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.toggle.isOn = true; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { ChunkSizeManager.Instance.slider.value = 16; GoalBoundingManager.Instance.slider.value = 0; CostOverwriteManager.Instance.toggle.isOn = false; CostOverwriteManager.Instance.UpdateErrorMargin(0); },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.toggle.isOn = true; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 2.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 7.5f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.1f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.2f; },
+						() => { GoalBoundingManager.Instance.slider.value = 10f; CostOverwriteManager.Instance.slider.value = 0.3f; },
+					};
+				}
+			
+				// Clear path displayer
+				Displayer.Instance.ClearPathLayer();
+				
+				// Run solver for every action
+				foreach (var operation in operations)
+				{
+					// Prepare environment
+					operation.Invoke();
+					
+					// Clear GUI
+					Clear();
+					
+					// Start solving coroutine
+					solverCoroutine = StartCoroutine(AlgorithmSelector.GetAlgorithm().Solve(AlgorithmSelector.GetHeuristic(), 12, 2));
+				
+					// Wait for solver to finish
+					yield return new WaitUntil(() => isRunning == false);
+				}
+			}
+		}
+		
+		// Reset parameters
+		AlgorithmSelector.Instance.algorithmDropdown.value = 0;
+		AlgorithmSelector.Instance.heuristicDropdown.value = 0;
+		GoalBoundingManager.Instance.slider.value = 0;
+		CostOverwriteManager.Instance.toggle.isOn = false;
+		CostOverwriteManager.Instance.slider.value = 0f;
+		Clear();
+		
+		// Open folder with statistics
+		ResultDisplayer.SetText(1, "All data generated!");
+		ResultDisplayer.SetText(2, string.Empty);
+		ResultDisplayer.SetText(3, string.Empty);
+		System.Diagnostics.Process.Start("Statistics");
 	}
 	
 	/// <summary>

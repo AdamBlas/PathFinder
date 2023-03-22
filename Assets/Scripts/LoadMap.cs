@@ -16,6 +16,9 @@ public class LoadMap : MonoBehaviour
 	[Tooltip("Text field that copntains width and height values")]
 	public TMPro.TMP_Text mapDimensionsValues;
 	
+	[Tooltip("Name of the file")]
+	public static string mapName;
+	
 	
 	
 	
@@ -34,6 +37,9 @@ public class LoadMap : MonoBehaviour
 			return;
 			
 		string path = paths[0];
+		
+		// Save path for future
+		mapName = System.IO.Path.GetFileNameWithoutExtension(path);
 		
 		// Get file content
 		string[] mapText = File.ReadAllLines(path);

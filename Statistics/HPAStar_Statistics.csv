@@ -1,0 +1,2 @@
+Map Name	Start Coords	Goal Coords	Chunk Size	Heuristic	Path Found	Precalc Time	Search Time	Total Time	Path Length (Node)	Path Length (Distance)	Chunks Analyzed	Chunks Allocated	Nodes Analyzed	Nodes Allocated	Memory (B)	Goal Bounding	Cost Overwrite	Error Margin
+AR0312SR	(8x30)	(30x15)	4	Dijkstra	True	1,5984	5,6186	7,217	23	28,79899	41	47	74	39	1567	---	---	---

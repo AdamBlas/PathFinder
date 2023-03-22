@@ -75,6 +75,16 @@ public class NodeSortedList
 		newElements.Clear();
 	}
 	
+	/// <summary>
+	/// Clears list
+	/// </summary>
+	public void Clear()
+	{
+		// Clear both lists
+		sortedList.Clear();
+		newElements.Clear();
+	}
+	
 	public override string ToString()
 	{
 		string result = string.Empty;

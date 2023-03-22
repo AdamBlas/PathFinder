@@ -70,7 +70,7 @@ public class NodeDataDisplayer : MonoBehaviour
 		dataTexts[2].gameObject.SetActive(false);
 		
 		// Get array of visited nodes
-		Node[,] array = AStar.Instance.nodesVisited;
+		Array2D<Node> array = AStar.Instance.nodesVisited;
 		
 		// Check if array was initialized and if node was created
 		if (array == null || array[pixels.y, pixels.x] == null)

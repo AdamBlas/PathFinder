@@ -22,6 +22,9 @@ public class AStar : Algorithm
 		// Set name and description
 		name = "A*";
 		description = "A* - Algorithm selects the best node from the available pool and adds all adjecent nodes to the pool.\nIt guarantees to find a solution if such exists and that solution will be the best one possible.";
+	
+		// Set path to file with statistics
+		statsFileName = "Statistics/AStar_Statistics.csv";
 	}
 	
 	/// <summary>
@@ -85,180 +88,260 @@ public class AStar : Algorithm
 	/// Solves current problem using A* algorithm
 	/// </summary>
 	/// <param name="heuristic"> Heuristic used to calculate node's cost </param>
-	public override IEnumerator Solve(Heuristic heuristic)
+	/// <param name="howMuchToRemove"> How many worst records has to be deleted before averaging </param>
+	public override IEnumerator Solve(Heuristic heuristic, int iterations, int howMuchToRemove)
 	{
-		// Create stopwatch object and start time measuring
-		System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
-		timer.Start();
+		// Set flag
+		Solver.isRunning = true;
 		
-		// Save heuristic
-		this.heuristic = heuristic;
-		
-		// Create open list and initialize it with start node
-		Node node = new Node(StartGoalManager.startCol, StartGoalManager.startRow, 0, null);
-		list = new NodeSortedList(node);
-		
-		// Prepare array with information of previously visited nodes
-		nodesVisited = new Node[Map.width, Map.height];
-		nodesVisited[StartGoalManager.startCol, StartGoalManager.startRow] = node;
-		
-		// Prepare variables to store result
-		nodesAnalyzed = 0;
+		// Prepare variable that will store results
 		bool pathFound = false;
-		string resultMessage = "Path not found";
+		float timeToSolveAvg = 0;
+		int nodesLength = 0;
+		float pathLength = 0;
+		int nodesAllocated = 0;
 		
-		// Prepare variable that will hold new nodes' coordinates
-		int y;
-
-		// This counter will secure loop from running infinitely
-		int securityCounter = 0;
-		int mapSize = Map.width * Map.height * 2;
-
-		// Start loop
-		while (true)
+		for (int i = 0; i < iterations; i++)
 		{
-			// Check security counter
-			if (securityCounter++ >= mapSize)
+			// Create stopwatch object and start time measuring
+			System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+			timer.Start();
+			
+			// Save heuristic
+			this.heuristic = heuristic;
+			
+			// Create open list and initialize it with start node
+			Node node = new Node(StartGoalManager.startCol, StartGoalManager.startRow, 0, null);
+			list = new NodeSortedList(node);
+			
+			// Prepare array with information of previously visited nodes
+			nodesVisited = new Array2D<Node>(Map.width, Map.height);
+			nodesVisited[StartGoalManager.startCol, StartGoalManager.startRow] = node;
+			
+			// Prepare variables to store result
+			nodesAnalyzed = 0;
+			pathFound = false;
+			string resultMessage = "Path not found";
+			
+			// Prepare variable that will hold new nodes' coordinates
+			int y;
+	
+			// This counter will secure loop from running infinitely
+			int securityCounter = 0;
+			int mapSize = Map.width * Map.height * 2;
+	
+			// Start loop
+			while (true)
 			{
-				Debug.LogWarning("WARNING: Solving loop stopped for security reasons");
-				resultMessage = "Maximum loop iterations reached.";
-				break;
-			}
-
-			// Check if there is node to analyze
-			if (list.count == 0)
-				break;
-			
-			// Get best node from list
-			node = list.PopAtZero();
-			nodesAnalyzed++;
-			
-			// Check if this is goal node
-			if (node.x == StartGoalManager.goalCol && node.y == StartGoalManager.goalRow)
-			{
-				pathFound = true;
-				resultMessage = "Path was found";
-				break;
-			}
-			
-			// Check if we can go in given direction
-			bool canGoUp = node.y != 0;
-			bool canGoRight = node.x != Map.width - 1;
-			bool canGoDown = node.y != Map.height - 1;
-			bool canGoLeft = node.x != 0;
-			
-			// Expand the node in every direction
-			
-			// Check NORTH DIRECTIONS
-			if (canGoUp)
-			{
-				// Y coordoinate will be common for all three directions, so we can calculate it beforehand
-				y = node.y - 1;
-				
-				// Check NORTH-WEST
-				if (canGoLeft)
-					TryToExpand(node.x - 1, y, node);
-				
-				// Check NORTH
-				TryToExpand(node.x, y, node);
-				
-				// Check NORTH-EAST
-				if (canGoRight)
-					TryToExpand(node.x + 1, y, node);
-			}
-			
-			// Check EAST
-			if (canGoRight)
-				TryToExpand(node.x + 1, node.y, node);
-			
-			// Chceck SOUTH DIRECTIONS
-			if (canGoDown)
-			{
-				// Y coordoinate will be common for all three directions, so we can calculate it beforehand
-				y = node.y + 1;
-				
-				// Check SOUTH-EAST
-				if (canGoRight)
-					TryToExpand(node.x + 1, y, node);
-					
-				// Check SOUTH
-				TryToExpand(node.x, y, node);
-
-				// Check SOUTH-WEST
-				if (canGoLeft)
-					TryToExpand(node.x - 1, y, node);
-			}
-			
-			// Check WEST
-			if (canGoLeft)
-				TryToExpand(node.x - 1, node.y, node);
-			
-			// Expanded in all possible directions
-			// Sort list to put newly added nodes in order
-			list.Sort();
-			
-			// Update displayer
-			Displayer.Instance.PaintPath(node.x, node.y, Displayer.Instance.analyzedColor);
-			
-			// If solver is supposed to be animated, pause it for some time
-			if (Solver.animateSolvingProcess)
-			{
-				// If delay is small enough, animate only every 10th frame, otherwise even one frame delay will take long
-				if (Solver.delay > 0.2f || securityCounter % 10 == 0)
+				// Check security counter
+				if (securityCounter++ >= mapSize)
 				{
-					// Pause timer
-					timer.Stop();
+					Debug.LogWarning("WARNING: Solving loop stopped for security reasons");
+					resultMessage = "Maximum loop iterations reached.";
+					break;
+				}
+	
+				// Check if there is node to analyze
+				if (list.count == 0)
+					break;
+				
+				// Get best node from list
+				node = list.PopAtZero();
+				nodesAnalyzed++;
+				
+				// Check if this is goal node
+				if (node.x == StartGoalManager.goalCol && node.y == StartGoalManager.goalRow)
+				{
+					pathFound = true;
+					resultMessage = "Path was found";
+					break;
+				}
+				
+				// Check if we can go in given direction
+				bool canGoUp = node.y != 0;
+				bool canGoRight = node.x != Map.width - 1;
+				bool canGoDown = node.y != Map.height - 1;
+				bool canGoLeft = node.x != 0;
+				
+				// Expand the node in every direction
+				
+				// Check NORTH DIRECTIONS
+				if (canGoUp)
+				{
+					// Y coordoinate will be common for all three directions, so we can calculate it beforehand
+					y = node.y - 1;
 					
-					// Pause program for a short duration
-					yield return new WaitForSeconds(Solver.delay);
+					// Check NORTH-WEST
+					if (canGoLeft)
+						TryToExpand(node.x - 1, y, node);
 					
-					// Resume timer
-					timer.Start();
+					// Check NORTH
+					TryToExpand(node.x, y, node);
+					
+					// Check NORTH-EAST
+					if (canGoRight)
+						TryToExpand(node.x + 1, y, node);
+				}
+				
+				// Check EAST
+				if (canGoRight)
+					TryToExpand(node.x + 1, node.y, node);
+				
+				// Chceck SOUTH DIRECTIONS
+				if (canGoDown)
+				{
+					// Y coordoinate will be common for all three directions, so we can calculate it beforehand
+					y = node.y + 1;
+					
+					// Check SOUTH-EAST
+					if (canGoRight)
+						TryToExpand(node.x + 1, y, node);
+						
+					// Check SOUTH
+					TryToExpand(node.x, y, node);
+	
+					// Check SOUTH-WEST
+					if (canGoLeft)
+						TryToExpand(node.x - 1, y, node);
+				}
+				
+				// Check WEST
+				if (canGoLeft)
+					TryToExpand(node.x - 1, node.y, node);
+				
+				// Expanded in all possible directions
+				// Sort list to put newly added nodes in order
+				list.Sort();
+				
+				// Update displayer
+				Displayer.Instance.PaintPath(node.x, node.y, Displayer.Instance.analyzedColor);
+				
+				// If solver is supposed to be animated, pause it for some time
+				if (Solver.animateSolvingProcess)
+				{
+					// If delay is small enough, animate only every 10th frame, otherwise even one frame delay will take long
+					if (Solver.delay > 0.2f || securityCounter % 10 == 0)
+					{
+						// Pause timer
+						timer.Stop();
+						
+						// Pause program for a short duration
+						yield return new WaitForSeconds(Solver.delay);
+						
+						// Resume timer
+						timer.Start();
+					}
 				}
 			}
+			
+			// Stop the timer
+			timer.Stop();
+			
+			// Prepare variables to be print in statistics
+			nodesAllocated = Displayer.GetAmountOfNodesAllocated();
+			
+			// Loop has ended, either path was found or all nodes were analyzed and no path was found
+			if (pathFound == false)
+			{
+				// Path was not found
+				// Display proper message and end method
+				ResultDisplayer.SetText(1, "FAILURE\n" + resultMessage);
+				ResultDisplayer.SetText(2, string.Empty);
+				ResultDisplayer.SetText(3, string.Empty);
+			}
+			else
+			{
+				// Path was found
+				
+				// Paint all pixels on displayer and calculate path's length
+				PrintPath(node, out nodesLength, out pathLength);
+				
+				// Display message and statistics
+				
+				// Prepare message for displayer 1
+				string msg1 = "TIME";
+				msg1 += "\n" + timer.Elapsed.TotalMilliseconds + " ms";
+				msg1 += "\n\nPATH LENGTH";
+				msg1 += "\nNodes:\t" + nodesLength;
+				msg1 += "\nDistance:\t" + pathLength.ToString("f2");
+				
+				// Prepare message for displayer 2
+				string msg2 = "NODES AMOUNT";
+				msg2 +=	"\nAnalyzed:\t\t" + nodesAnalyzed;
+				msg2 += "\nAllocated:\t\t" + nodesAllocated;
+		
+				// Prepare message for displayer 3
+				string msg3 = "MEMORY USAGE";
+				msg3 += "\nUsage per node:\t" + Node.MEMORY_USAGE + " B";
+				msg3 += "\nTotal memory:\t" + (nodesAllocated * Node.MEMORY_USAGE) + " B";
+				
+				// Display prepared messages
+				ResultDisplayer.SetText(1, msg1);
+				ResultDisplayer.SetText(2, msg2);
+				ResultDisplayer.SetText(3, msg3);
+				
+				// Save stats for later average
+				AddValuesToAverage((float)timer.Elapsed.TotalMilliseconds);
+			}
+		}
+		// All iterations done
+			
+		// First, check if file exists
+		if (System.IO.File.Exists(statsFileName) == false)
+		{
+			// File does not exist, create it and add headers
+			SaveToCsv(
+				"Map Name",
+				"Start Coords",
+				"Goal Coords",
+				"Heuristic",
+				"Path Found",
+				"Time",
+				"Path Length (Nodes)",
+				"Path Length (Distance)",
+				"Analyzed",
+				"Allocated",
+				"Memory (B)",
+				"Goal Bounding",
+				"Cost Overwrite",
+				"Error Margin");
 		}
 		
-		// Stop the timer
-		timer.Stop();
-		
-		// Loop has ended, either path was found or all nodes were analyzed and no path was found
 		if (pathFound == false)
 		{
-			// Path was not found
-			// Display proper message and end method
-			ResultDisplayer.SetText(1, "FAILURE\n" + resultMessage);
-			ResultDisplayer.SetText(2, string.Empty);
-			ResultDisplayer.SetText(3, string.Empty);
-			yield break;
+			// If path was not found, write just unfo about map
+			SaveToCsv(
+				LoadMap.mapName,
+				StartGoalManager.StartToString(),
+				StartGoalManager.GoalToString(),
+				AlgorithmSelector.GetHeuristic().name,
+				false,
+				"---", "---", "---", "---", "---", "---", "---", "---", "---");
 		}
-		// Path was found
+		else
+		{
+			// Get avg time
+			timeToSolveAvg = AverageValues(howMuchToRemove, 0)[0];
+			
+			// If path was found, save all statistics
+			SaveToCsv(
+				LoadMap.mapName,
+				StartGoalManager.StartToString(),
+				StartGoalManager.GoalToString(),
+				AlgorithmSelector.GetHeuristic().name,
+				true,
+				timeToSolveAvg,
+				nodesLength,
+				pathLength,
+				nodesAnalyzed,
+				nodesAllocated,
+				nodesAllocated * Node.MEMORY_USAGE,
+				GoalBoundingManager.shouldApply ? GoalBoundingManager.strength : "---",
+				GoalBoundingManager.shouldApply ? CostOverwriteManager.shouldOverwrite : "---",
+				GoalBoundingManager.shouldApply && CostOverwriteManager.shouldOverwrite ? (CostOverwriteManager.errorMargin - 1) * 100 + "%" : "---");
+		}
 		
-		// Paint all pixels on displayer and calculate path's length
-		PrintPath(node, out int nodesLength, out float pathLength);
-		
-		// Display message and statistics
-		
-		// Prepare message for displayer 1
-		string msg1 = "TIME";
-		msg1 += "\n" + timer.Elapsed.TotalMilliseconds + " ms";
-		msg1 += "\n\nPATH LENGTH";
-		msg1 += "\nNodes:\t" + nodesLength;
-		msg1 += "\nDistance:\t" + pathLength.ToString("f2");
-		
-		// Prepare message for displayer 2
-		int nodesAllocated = Displayer.GetAmountOfNodesAllocated();
-		string msg2 = "NODES AMOUNT";
-		msg2 +=	"\nAnalyzed:\t\t" + nodesAnalyzed;
-		msg2 += "\nAllocated:\t\t" + nodesAllocated;
-
-		// Prepare message for displayer 3
-		string msg3 = "MEMORY USAGE";
-		msg3 += "\nUsage per node:\t" + Node.MEMORY_USAGE + " B";
-		msg3 += "\nTotal memory:\t" + (nodesAllocated * Node.MEMORY_USAGE) + " B";
-		
-		// Display prepared messages
-		ResultDisplayer.SetText(1, msg1);
-		ResultDisplayer.SetText(2, msg2);
-		ResultDisplayer.SetText(3, msg3);
+		// Set flag
+		Solver.isRunning = false;
 	}
 }

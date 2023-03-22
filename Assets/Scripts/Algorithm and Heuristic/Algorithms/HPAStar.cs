@@ -12,19 +12,19 @@ public class HPAStar : Algorithm
 	public class Chunk : Node
 	{
 		[Tooltip("Constant value. Amount of memory used by single chunk.")]
-		public new const int MEMORY_USAGE = Node.MEMORY_USAGE + (8 * 2);
+		public new const int MEMORY_USAGE = Node.MEMORY_USAGE + 8;
 		// Base usage
-		// Nullable bool = 2 bytes
+		// bool = 1 byte
 		
 		// Flags that indicate whether or not you can go from this chunk in given direction
-		public bool? canGoUp = null;
-		public bool? canGoDown = null;
-		public bool? canGoLeft = null;
-		public bool? canGoRight = null;
-		public bool? canGoUpLeft = null;
-		public bool? canGoUpRight = null;
-		public bool? canGoDownLeft = null;
-		public bool? canGoDownRight = null;
+		public bool N = false;
+		public bool NE = false;
+		public bool E = false;
+		public bool SE = false;
+		public bool S = false;
+		public bool SW = false;
+		public bool W = false;
+		public bool NW = false;
 		
 		
 		
@@ -40,6 +40,48 @@ public class HPAStar : Algorithm
 		public Chunk(int x, int y, float cost, Chunk parentChunk) : base(x, y, cost, parentChunk) { }
 		
 		public override string ToString() => "X=" + x + ", Y=" + y + ", GridX=" + (int)(x / ChunkSize) + ", GridY=" + (int)(y / ChunkSize) + ", Cost=" + goalBoundCost + ", Parent={" + (parentNode == null ? "None" : (parentNode.x + ", " + parentNode.y)) + "}";
+	
+		/// <summary>
+		/// Returns this chunk in a string array version
+		/// </summary>
+		public string[] ToStringArray()
+		{
+			// Prepare array of chars, increase size by four for borders and passage signs
+			char[,] charArr = new char[ChunkSize + 1, ChunkSize + 1];
+			
+			// Initialize values
+			for (int i = 0; i < ChunkSize + 1; i++)
+				for (int j = 0; j < ChunkSize + 1; j++)
+					charArr[i, j] = '▓';
+
+			// Fill middle part with chunk info
+			for (int i = 0; i < ChunkSize; i++)
+				for (int j = 0; j < ChunkSize; j++)
+					charArr[j, i] = (x + i < Map.width && y + j < Map.height && Map.map[y + j, x + i] == FREE) ? '░' : '█';
+
+			// Fill passages
+			if (E)
+				for (int i = 0; i < ChunkSize; i++)
+					charArr[i, ChunkSize] = '↔';
+					
+			if (N)
+				for (int i = 0; i < ChunkSize; i++)
+					charArr[ChunkSize, i] = '↕';
+					
+			if (NE)
+				charArr[ChunkSize, ChunkSize] = 'X';
+						
+			// Convert char 2D array to string array
+			string[] result = new string[ChunkSize + 1];
+			for (int i = 0; i < ChunkSize + 1; i++)
+			{
+				result[i] = string.Empty;
+				for (int j = 0; j < ChunkSize + 1; j++)
+					result[i] += charArr[i, j];
+			}
+			
+			return result;
+		}
 	}
 	
 	
@@ -70,14 +112,14 @@ public class HPAStar : Algorithm
 	[Tooltip("Final node in the node path. Since path si searched inside chunks, this node actually equals to start coordinates.")]
 	Node finalNode;
 	
-	[Tooltip("Amount of nodes analyzed by algorithm")]
-	int amountOfNodesAnalyzed;
-	
 	[Tooltip("Time required for finding path inside chunks")]
 	float timeToFindFinalPath;
 	
 	[Tooltip("Array of already visited chunks")]
 	public Array2D<Chunk> visitedChunks;
+	
+	[Tooltip("Chunk where path was not found")]
+	Chunk chunkWithNoPath;
 
 	
 	
@@ -95,126 +137,246 @@ public class HPAStar : Algorithm
 		// Set name and description
 		name = "HPA*";
 		description = "HPA* (Hierarchical PathFinding A*) - Algorithm splits map into smaller chunks, uses A* to find path from chunk with start node to chunk with goal node and then uses A* to find path only inside chunks in path.";
+	
+		// Set path to file with statistics
+		statsFileName = "Statistics/HPAStar_Statistics.csv";
 	}
 	
 	/// <summary>
 	/// Solves current problem using A* algorithm
 	/// </summary>
 	/// <param name="heuristic"> Heuristic used to calculate node's cost </param>
-	public override IEnumerator Solve(Heuristic heuristic)
+	/// <param name="howMuchToRemove"> How many worst records has to be deleted before averaging </param>
+	public override IEnumerator Solve(Heuristic heuristic, int iterations, int howMuchToRemove)
 	{
-		// Prepare timer object
-		System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
-		timer.Start();
+		// Set flag
+		Solver.isRunning = true;
 		
-		// Create chunk grid
-		grid = CreateGrid(out int width, out int height);
-
-		// Get precalculation time
-		timer.Stop();		
-		float precalculation = (float)timer.Elapsed.TotalMilliseconds;
-		timer.Reset();
+		// Prepare variables that will store results
+		bool pathFound = false;
+		float timeToGenerateMap = 0;
+		int nodesLength = 0;
+		float pathLength = 0;
+		int chunksAllocated = 0;
+		int nodesAllocated = 0;
 		
-		// Set details button action to create file with detailed data
-		DetailsButtonManager.EnableButton();
-		DetailsButtonManager.ButtonComponent.onClick.RemoveAllListeners();
-		DetailsButtonManager.ButtonComponent.onClick.AddListener(() => PrintChunkMap(grid, width, height));
+		// Reset global variables
+		finalChunk = null;
+		grid = null;
+		amountOfChunksToAnalyze = 0;
+		amountOfChunksAnalyzed = 0;
+		amountOfChunksReanalyzed = 0;
+		timeToFindPathInChunkGrid = 0;
+		finalNode = null;
+		timeToFindFinalPath = 0;
+		visitedChunks = null;
+		chunkWithNoPath = null;
 		
-		// Find path in this grid
-		yield return ApplyAStartOnGrid(grid, width, height, heuristic);
-		
-		// Check if path was found
-		if (finalChunk == null)
+		for (int i = 0; i < iterations; i++)
 		{
-			ResultDisplayer.SetText(1, "FAILURE:\nPath not found");
-			ResultDisplayer.SetText(2, "FAILURE:\nNo path was found using chunk grid");
-			ResultDisplayer.SetText(3, string.Empty);
-			yield break;
-		}
+			// Prepare timer object
+			System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+			timer.Start();
+			
+			// Create chunk grid
+			grid = CreateGrid(out int width, out int height);
+	
+			// Get precalculation time
+			timer.Stop();		
+			timeToGenerateMap = (float)timer.Elapsed.TotalMilliseconds;
+			timer.Reset();
+			
+			// Set details button action to create file with detailed data
+			DetailsButtonManager.EnableButton();
+			DetailsButtonManager.ButtonComponent.onClick.RemoveAllListeners();
+			DetailsButtonManager.ButtonComponent.onClick.AddListener(() => PrintChunkMap(grid, width, height));
+			
+			// Find path in this grid
+			yield return ApplyAStartOnGrid(grid, width, height, heuristic);
+			
+			// Check if path was found
+			if (finalChunk == null)
+			{
+				ResultDisplayer.SetText(1, "FAILURE:\nPath not found");
+				ResultDisplayer.SetText(2, "FAILURE:\nNo path was found using chunk grid");
+				ResultDisplayer.SetText(3, string.Empty);
+			}
+			else
+			{
+				// Paint all chunks that connect start and goal node
+				Chunk chunk = finalChunk;
+				int amountOfChunksInPath = 0;
+				while (chunk != null)
+				{
+					// Paint chunk
+					PaintChunk(chunk);
+					
+					// Increase counter
+					amountOfChunksInPath++;
+					
+					// Go to the next chunk
+					chunk = (Chunk)chunk.parentNode;
+				}
+		
+				// Apply A* on every chunk in the path
+				yield return ApplyAStarOnChunksList(finalChunk, heuristic);
 				
-		// Paint all chunks that connect start and goal node
-		Chunk chunk = finalChunk;
-		int amountOfChunksInPath = 0;
-		while (chunk != null)
-		{
-			// Paint chunk
-			PaintChunk(chunk);
-			
-			// Increase counter
-			amountOfChunksInPath++;
-			
-			// Go to the next chunk
-			chunk = (Chunk)chunk.parentNode;
+				// Check if path was found
+				if (finalNode == null)
+				{
+					// Set flag
+					pathFound = false;
+					
+					// Display message about failure
+					ResultDisplayer.SetText(1, "FAILURE\nPath not found");
+					ResultDisplayer.SetText(2, "FAILURE\nNo path was found inside the chunk (" + chunkWithNoPath.x + ", " + chunkWithNoPath.y + ")");
+					ResultDisplayer.SetText(3, string.Empty);
+				}
+				else
+				{
+					// Set flag
+					pathFound = true;
+					
+					// Paint all pixels on displayer and calculate path's length
+					PrintPath(finalNode, out nodesLength, out pathLength);
+					
+					// Prepare messages to display
+					string msg1 = "TIME";
+					msg1 += "\nPrecalc:\t" + timeToGenerateMap + " ms";
+					msg1 += "\nChunk path:\t" + timeToFindPathInChunkGrid + " ms";
+					msg1 += "\nFinal path:\t" + timeToFindFinalPath + " ms";
+					msg1 += "\nTotal:\t\t" + (timeToGenerateMap + timeToFindPathInChunkGrid + timeToFindFinalPath) + " ms";
+					msg1 += "\n\nPATH LENGTH";
+					msg1 += "\nNodes:\t" + nodesLength;
+					msg1 += "\nDistance:\t" + pathLength.ToString("f2");
+					
+					chunksAllocated = Displayer.GetAmountOfChunksAllocated();
+					string msg2 = "NODES AMOUNT";
+					msg2 += "\nChunks:";
+					msg2 += "\n\tTo Analyze:\t" + amountOfChunksToAnalyze;
+					msg2 += "\n\tAnalyzed:\t" + amountOfChunksAnalyzed;
+					msg2 += "\n\tAllocated:\t" + chunksAllocated;
+					msg2 += "\n\tIn Path:\t" + amountOfChunksInPath;
+					msg2 += "\nNodes:";
+					msg2 += "\n\tAnalyzed:\t" + nodesAnalyzed;
+					msg2 += "\n\tAllocated:\t" + ChunkSize * ChunkSize;
+					
+					string msg3 = "MEMORY USAGE";
+					msg3 += "\nUsage per chunk:\t" + Chunk.MEMORY_USAGE + " B";
+					msg3 += "\nUsage for nodes:\t" + (ChunkSize * ChunkSize * Node.MEMORY_USAGE) + " B";
+					msg3 += "\nTotal memory:\t" + (chunksAllocated * Chunk.MEMORY_USAGE) + (ChunkSize * ChunkSize * Node.MEMORY_USAGE) + " B";
+					
+					// Print statistics
+					ResultDisplayer.SetText(1, msg1);
+					ResultDisplayer.SetText(2, msg2);
+					ResultDisplayer.SetText(3, msg3);
+					
+					// Save stats for later average
+					AddValuesToAverage(timeToGenerateMap, timeToFindPathInChunkGrid, timeToFindFinalPath, timeToFindPathInChunkGrid + timeToFindFinalPath);
+				}
+			}
 		}
-
-		// Apply A* on every chunk in the path
-		yield return ApplyAStarOnChunksList(finalChunk, heuristic);
-		
-		// Check if path was found
-		if (finalNode == null)
+		// All iterations done
+	
+		// First, check if file exists
+		if (System.IO.File.Exists(statsFileName) == false)
 		{
-			ResultDisplayer.SetText(1, "FAILURE\nPath not found");
-			ResultDisplayer.SetText(2, "FAILURE\nNo path was found inside the chunk");
-			ResultDisplayer.SetText(3, string.Empty);
-			yield break;
+			// File does not exist, create it and add headers
+			SaveToCsv(
+				"Map Name",
+				"Start Coords",
+				"Goal Coords",
+				"Chunk Size",
+				"Heuristic",
+				"Path Found",
+				"Precalc Time",
+				"Search Time",
+				"Total Time",
+				"Path Length (Node)",
+				"Path Length (Distance)",
+				"Chunks Analyzed",
+				"Chunks Allocated",
+				"Nodes Analyzed",
+				"Nodes Allocated",
+				"Memory (B)",
+				"Goal Bounding",
+				"Cost Overwrite",
+				"Error Margin"
+			);
+		}
+			
+		if (pathFound == false)
+		{
+			// If path was not found, write just data about map
+			SaveToCsv(
+				LoadMap.mapName,
+				StartGoalManager.StartToString(),
+				StartGoalManager.GoalToString(),
+				ChunkSize,
+				AlgorithmSelector.GetHeuristic().name,
+				false,
+				"---", "---", "---", "---", "---", "---", "---", "---", "---", "---", "---", "---", "---"
+			);
+		}
+		else
+		{
+			// Get avg values
+			float[] times = AverageValues(howMuchToRemove, 3);
+			timeToGenerateMap = times[0];
+			timeToFindPathInChunkGrid = times[1];
+			timeToFindFinalPath = times[2];
+			float totalPathFindTime = times[3];
+			
+			// If path was found, save all statistics
+			SaveToCsv(
+				LoadMap.mapName,
+				StartGoalManager.StartToString(),
+				StartGoalManager.GoalToString(),
+				ChunkSize,
+				AlgorithmSelector.GetHeuristic().name,
+				true,
+				timeToGenerateMap,
+				timeToFindPathInChunkGrid + timeToFindFinalPath,
+				timeToGenerateMap + timeToFindPathInChunkGrid + timeToFindFinalPath,
+				nodesLength,
+				pathLength,
+				amountOfChunksAnalyzed,
+				chunksAllocated,
+				nodesAnalyzed,
+				ChunkSize * ChunkSize + nodesLength,
+				(chunksAllocated * Chunk.MEMORY_USAGE) + ((ChunkSize * ChunkSize + nodesLength) + Node.MEMORY_USAGE),
+				GoalBoundingManager.shouldApply ? GoalBoundingManager.strength : "---",
+				GoalBoundingManager.shouldApply ? CostOverwriteManager.shouldOverwrite : "---",
+				GoalBoundingManager.shouldApply && CostOverwriteManager.shouldOverwrite ? (CostOverwriteManager.errorMargin - 1) * 100 + "%" : "---"
+			);
 		}
 		
-		// Paint all pixels on displayer and calculate path's length
-		PrintPath(finalNode, out int nodesLength, out float pathLength);
-		
-		// Prepare messages to display
-		string msg1 = "TIME";
-		msg1 += "\nPrecalc:\t" + precalculation + " ms";
-		msg1 += "\nChunk path:\t" + timeToFindPathInChunkGrid + " ms";
-		msg1 += "\nFinal path:\t" + timeToFindFinalPath + " ms";
-		msg1 += "\nTotal:\t\t" + (precalculation + timeToFindPathInChunkGrid + timeToFindFinalPath) + " ms";
-		msg1 += "\n\nPATH LENGTH";
-		msg1 += "\nNodes:\t" + nodesLength;
-		msg1 += "\nDistance:\t" + pathLength.ToString("f2");
-		
-		int chunksAllocated = Displayer.GetAmountOfChunksAllocated();
-		string msg2 = "NODES AMOUNT";
-		msg2 += "\nChunks:";
-		msg2 += "\n\tTo Analyze:\t" + amountOfChunksToAnalyze;
-		msg2 += "\n\tAnalyzed:\t" + amountOfChunksAnalyzed;
-		msg2 += "\n\tAllocated:\t" + chunksAllocated;
-		msg2 += "\n\tIn Path:\t" + amountOfChunksInPath;
-		msg2 += "\nNodes:";
-		msg2 += "\n\tAnalyzed:\t" + amountOfNodesAnalyzed;
-		msg2 += "\n\tAllocated:\t" + ChunkSize * ChunkSize;
-		
-		string msg3 = "MEMORY USAGE";
-		msg3 += "\nUsage per chunk:\t" + Chunk.MEMORY_USAGE + " B";
-		msg3 += "\nUsage for nodes:\t" + (ChunkSize * ChunkSize * Node.MEMORY_USAGE) + " B";
-		msg3 += "\nTotal memory:\t" + (chunksAllocated * Chunk.MEMORY_USAGE) + (ChunkSize * ChunkSize * Node.MEMORY_USAGE) + " B";
-		
-		// Print statistics
-		ResultDisplayer.SetText(1, msg1);
-		ResultDisplayer.SetText(2, msg2);
-		ResultDisplayer.SetText(3, msg3);
+		// Set flag
+		Solver.isRunning = false;
 	}
 	
 	/// <summary>
-	/// Tries to expand the node towards goven coordinates
+	/// Tries to expand the node towards given coordinates
 	/// </summary>
 	/// <param name="x"> X coordinate of the expansion </param>
 	/// <param name="y"> Y coordinate of the expansion </param>
 	/// <param name="parentNode"> Expanding node </param>
 	void TryToExpandNode(int x, int y, int chunkX, int chunkY, Node parentNode)
 	{
-		// Check diagonal condition (node can expand diagonally only if movement in both cardinal directions for that diagonal is possible)
-		if (parentNode.x - x != 0 && parentNode.y - y != 0)
+		// Check if node is free
+		if (Map.map[y, x] == OBSTACLE)
+			return;
+		
+		// Check if movement if diagonal
+		if (parentNode.x != x && parentNode.y != y)
 		{
-			// Movement is diagonal, check if movement in cardinals is possible
-			if (Map.map[parentNode.y, x] != FREE || Map.map[y, parentNode.x] != FREE)
-			{
-				// Movement in cardinals is not possible
+			// Movement is diagonal, check if movement in both cardinal directions is possible
+			if (Map.map[parentNode.y, x] == OBSTACLE || Map.map[y, parentNode.x] == OBSTACLE)
 				return;
-			}
 		}
 		
-		// Check if node is free
-		if (nodesVisited[chunkX, chunkY] == null && Map.map[y, x] == FREE)
+		// Check if node was visited
+		if (nodesVisited[chunkX, chunkY] == null)
 		{
 			// Node is free, expand in that direction
 			Node newNode = new Node(x, y, parentNode, heuristic, false);
@@ -247,13 +409,13 @@ public class HPAStar : Algorithm
 		Chunk chunk = finalChunk;
 		
 		// Prepare result variable
-		amountOfNodesAnalyzed = 0;
+		nodesAnalyzed = 0;
 		
 		// Iterate as long as there are chunks in list
 		while (chunk != null)
 		{
 			// Prepare array with info of whether or not node was visited
-			nodesVisited = new Node[ChunkSize, ChunkSize];
+			nodesVisited = new Array2D<Node>(ChunkSize, ChunkSize);
 			nodesVisited[node.x % ChunkSize, node.y % ChunkSize] = node;
 			
 			// Prepare list with visited chunks
@@ -261,17 +423,36 @@ public class HPAStar : Algorithm
 
 			// Prepare output variables
 			bool pathFoundInsideChunk = false;
-
+			
+			// Get the direction we want to move, this determines end condition
+			int xOffset = chunk.parentNode == null ? 0 : chunk.parentNode.x - chunk.x;
+			int yOffset = chunk.parentNode == null ? 0 : chunk.parentNode.y - chunk.y;
+			
+			/*
+			if (xOffset == 0 && yOffset > 0)		Debug.Log("Going SOUTH");
+			else if (xOffset == 0 && yOffset < 0)	Debug.Log("Going NORTH");
+			else if (xOffset > 0 && yOffset == 0)	Debug.Log("Going EAST");
+			else if (xOffset < 0 && yOffset == 0)	Debug.Log("Going WEST");
+			else if (xOffset > 0 && yOffset > 0)	Debug.Log("Going SOUTH-EAST");
+			else if (xOffset > 0 && yOffset < 0)	Debug.Log("Going NORTH-EAST");
+			else if (xOffset < 0 && yOffset > 0)	Debug.Log("Going SOUTH-WEST");
+			else if (xOffset < 0 && yOffset < 0)	Debug.Log("Going NORTH-WEST");
+			*/
+			
 			// Iterate as long as there are nodes in list
 			while (list.count != 0)
 			{
 				// Get node from the list
 				node = list.PopAtZero();
-				amountOfNodesAnalyzed++;
+				nodesAnalyzed++;
+				
+				// Debug.Log("Analyzing node: " + node + "\n Analyzing chunk: " + chunk);
 
 				// Get node's coords inside chunk
 				int nodeChunkX = node.x - chunk.x;
 				int nodeChunkY = node.y - chunk.y;
+				
+				// Debug.Log("Chunk Node coords: (" + nodeChunkX + ", " + nodeChunkY + ")");
 
 				// Check if node meets end conditions
 				if (chunk.parentNode == null)
@@ -292,45 +473,35 @@ public class HPAStar : Algorithm
 				}
 				else
 				{
-					// Get the direction we want to move, this determines end condition
-					int xOffset = chunk.x - chunk.parentNode.x;
-					int yOffset = chunk.y - chunk.parentNode.y;
-					
 					if (xOffset == 0)
 					{
-						// Goal chunk in in the same column
+						// Goal chunk is in the same column
 						if (yOffset > 0)
 						{
-							// Goal chunk is below, node must be in bottom row
-							if (nodeChunkY == 0)
+							// Goal chunk is on the SOUTH
+							if (nodeChunkY == ChunkSize - 1 && Map.map[node.y + 1, node.x] == FREE)
 							{
-								// Row is correct, check if that node has connection to free node in parent chunk
-								if (Map.map[node.y + 1, node.x] == FREE)
-								{
-									// Assign that neighbout node as new node to analyze
-									node = new Node(node.x, node.y - 1, node, heuristic);
-									
-									// Set flag and exit loop
-									pathFoundInsideChunk = true;
-									break;
-								}
+								// Debug.Log("Passage found: (" + node.x + ", " + node.y + ") -> (" + node.x + ", " + (node.y + 1) + ")");
+								
+								// Neighbour node is free, set it as new node
+								node = new Node(node.x, node.y + 1, node, heuristic);
+								
+								// Set flag
+								pathFoundInsideChunk = true;
 							}
 						}
 						else
 						{
-							// Goal chunk is above, node must be in the top row
-							if (nodeChunkY == ChunkSize - 1)
+							// Goal chunk is on the NORTH
+							if (nodeChunkY == 0 && Map.map[node.y - 1, node.x] == FREE)
 							{
-								// Row is correct, check if that node has connection to free node in parent chunk
-								if (Map.map[node.y - 1, node.x] == FREE)
-								{
-									// Assign that neighbout node as new node to analyze
-									node = new Node(node.x, node.y + 1, node, heuristic);
-									
-									// Set flag and exit loop
-									pathFoundInsideChunk = true;
-									break;
-								}
+								// Debug.Log("Passage found: (" + node.x + ", " + node.y + ") -> (" + node.x + ", " + (node.y + 1) + ")");
+								
+								// Neighbour node is free, set it as new node
+								node = new Node(node.x, node.y - 1, node, heuristic);
+								
+								// Set flag
+								pathFoundInsideChunk = true;
 							}
 						}
 					}
@@ -339,107 +510,118 @@ public class HPAStar : Algorithm
 						// Goal chunk is in the same row
 						if (xOffset > 0)
 						{
-							// Goal chunk is on the left, node must be in the left column
-							if (nodeChunkX == 0)
+							// Goal chunk is on the EAST
+							if (nodeChunkX == ChunkSize - 1 && Map.map[node.y, node.x + 1] == FREE)
 							{
-								// Column is correct, check if that node has connection to free node in parent chunk
-								if (Map.map[node.y, node.x - 1] == FREE)
-								{
-									// Assign that neighbout node as new node to analyze
-									node = new Node(node.x - 1, node.y, node, heuristic);
-									
-									// Set flag and exit loop
-									pathFoundInsideChunk = true;
-									break;
-								}
+								// Debug.Log("Passage found: (" + node.x + ", " + node.y + ") -> (" + (node.x + 1) + ", " + node.y + ")");
+								
+								// Neighbour node is free, set it as new node
+								node = new Node(node.x + 1, node.y, node, heuristic);
+								
+								// Set flag
+								pathFoundInsideChunk = true;
 							}
 						}
 						else
 						{
-							// Goal chunk is on the right, node must be in the right column
-							if (nodeChunkX == ChunkSize - 1)
+							// Goal chunk is on the WEST
+							if (nodeChunkX == 0 && Map.map[node.y, node.x - 1] == FREE)
 							{
-								// Column is correct, check if that node has connection to free node in parent chunk
-								if (Map.map[node.y, node.x + 1] == FREE)
-								{
-									// Assign that neighbout node as new node to analyze
-									node = new Node(node.x + 1, node.y, node, heuristic);
-									
-									// Set flag and exit loop
-									pathFoundInsideChunk = true;
-									break;
-								}
+								// Debug.Log("Passage found: (" + node.x + ", " + node.y + ") -> (" + (node.x - 1) + ", " + node.y + ")");
+								
+								// Neighbour node is free, set it as new node
+								node = new Node(node.x - 1, node.y, node, heuristic);
+								
+								// Set flag
+								pathFoundInsideChunk = true;
 							}
 						}
 					}
 					else
 					{
-						// Goal chunk is on diagonal
+						// Movement is diagonal
 						if (xOffset > 0)
 						{
-							// Goal chunk is on the left
+							// Goal chunk is on the EAST
 							if (yOffset > 0)
 							{
-								// Goal chunk is in the SW
-								if (nodeChunkX == 0 && nodeChunkY == 0)
+								// Goal chunk is on the SOUTH-EAST
+								// No need to check if neighbour is free, if it weren't, connection would not be made
+								if (nodeChunkX == ChunkSize - 1 && nodeChunkY == ChunkSize - 1)
 								{
-									// Node is correct
-									// Assign that neighbout node as new node to analyze
-									node = new Node(node.x - 1, node.y - 1, node, heuristic);
-									
-									// Set flag and exit loop
+									// Debug.Log("Passage found: (" + node.x + ", " + node.y + ") -> (" + (node.x + 1) + ", " + (node.y + 1) + ")");
+								
+									// Neighbour node is free, set it as new node
+									node = new Node(node.x + 1, node.y + 1, node, heuristic);
+								
+									// Set flag
 									pathFoundInsideChunk = true;
-									break;
 								}
 							}
 							else
 							{
-								// Goal chunk is in the NW
-								if (nodeChunkX == 0 && nodeChunkY == ChunkSize - 1)
+								// Goal chunk is on the NORTH-EAST
+								// No need to check if neighbour is free, if it weren't, connection would not be made
+								if (nodeChunkX == ChunkSize - 1 && nodeChunkY == 0)
 								{
-									// Node is correct
-									// Assign that neighbout node as new node to analyze
-									node = new Node(node.x - 1, node.y + 1, node, heuristic);
-									
-									// Set flag and exit loop
+									// Debug.Log("Passage found: (" + node.x + ", " + node.y + ") -> (" + (node.x + 1) + ", " + (node.y - 1) + ")");
+								
+									// Neighbour node is free, set it as new node
+									node = new Node(node.x + 1, node.y - 1, node, heuristic);
+								
+									// Set flag
 									pathFoundInsideChunk = true;
-									break;
 								}
 							}
 						}
 						else
 						{
-							// Goal chunk is on the right
+							// Goal chunk is on the WEST
 							if (yOffset > 0)
 							{
-								// Goal chunk is in the SE
-								if (nodeChunkX == ChunkSize - 1 && nodeChunkY == 0)
+								// Goal chunk is on the SOUTH-WEST
+								// No need to check if neighbour is free, if it weren't, connection would not be made
+								if (nodeChunkX == 0 && nodeChunkY == ChunkSize - 1)
 								{
-									// Node is correct
-									// Assign that neighbout node as new node to analyze
-									node = new Node(node.x + 1, node.y - 1, node, heuristic);
-									
-									// Set flag and exit loop
+									// Debug.Log("Passage found: (" + node.x + ", " + node.y + ") -> (" + (node.x - 1) + ", " + (node.y + 1) + ")");
+								
+									// Neighbour node is free, set it as new node
+									node = new Node(node.x - 1, node.y + 1, node, heuristic);
+								
+									// Set flag
 									pathFoundInsideChunk = true;
-									break;
 								}
 							}
 							else
 							{
-								// Goal chunk is in the NE
-								if (nodeChunkX == ChunkSize - 1 && nodeChunkY == ChunkSize - 1)
+								// Goal chunk is on the NORTH-WEST
+								// No need to check if neighbour is free, if it weren't, connection would not be made
+								if (nodeChunkX == 0 && nodeChunkY == 0)
 								{
-									// Node is correct
-									// Assign that neighbout node as new node to analyze
-									node = new Node(node.x + 1, node.y + 1, node, heuristic);
-									
-									// Set flag and exit loop
+									// Debug.Log("Passage found: (" + node.x + ", " + node.y + ") -> (" + (node.x - 1) + ", " + (node.y - 1) + ")");
+								
+									// Neighbour node is free, set it as new node
+									node = new Node(node.x - 1, node.y - 1, node, heuristic);
+								
+									// Set flag
 									pathFoundInsideChunk = true;
-									break;
 								}
 							}
 						}
 					}
+				}
+				
+				// If path was found, don't expand and go to the next chunk
+				if (pathFoundInsideChunk)
+				{
+					// Clear list from all nodes from current chunk
+					list.Clear();
+					
+					// Add newly found node
+					list.Add(node);
+					
+					// Exit loop
+					break;
 				}
 				
 				// End conditions were not met, expand the node
@@ -489,30 +671,13 @@ public class HPAStar : Algorithm
 				
 				// Node expanded in every possible direction, sort list and go to the next node
 				list.Sort();
-				
-				// If solving process is supposed to be animated, do short delay
-				/*
-				if (Solver.animateSolvingProcess)
-				{
-					// Stop timer so that delay won't count towards total time
-					timer.Stop();
-					
-					// Pause program
-					yield return new WaitForSeconds(Solver.delay);
-					
-					// Turn timer on again
-					timer.Start();
-				}
-				*/
 			}
 
 			// Check if path was found
 			if (pathFoundInsideChunk == false)
 			{
-				// Path was not found, set proper messages and end method
-				ResultDisplayer.SetText(1, "FAILURE\nPath not found");
-				ResultDisplayer.SetText(2, "On the path there is a chunk without passage to the goal chunk.");
-				ResultDisplayer.SetText(3, string.Empty);
+				// Path was not found, set chunk and end method
+				chunkWithNoPath = chunk;
 				yield break;
 			}
 			
@@ -563,6 +728,8 @@ public class HPAStar : Algorithm
 		}
 		else
 		{
+			// Skip obstacle nodes
+			
 			// Chunk wasn't visited before, add it to list
 			list.Add(grid[gridX, gridY]);
 
@@ -623,6 +790,7 @@ public class HPAStar : Algorithm
 		
 		// Prepare variable that will store result
 		bool pathFound = false;
+		amountOfChunksToAnalyze = 0;
 		amountOfChunksAnalyzed = 0;
 		amountOfChunksReanalyzed = 0;
 		
@@ -661,28 +829,28 @@ public class HPAStar : Algorithm
 			// Add neighbour chunks to the list
 			
 			// Check NORTH neighbour
-			TryToExpandChunk(gridX, gridY + 1, chunk.canGoUp.Value, chunk);
+			TryToExpandChunk(gridX, gridY + 1, chunk.N, chunk);
 			
 			// Check NORTH-EAST neighbour
-			TryToExpandChunk(gridX + 1, gridY + 1, chunk.canGoUpRight.Value, chunk);
+			TryToExpandChunk(gridX + 1, gridY + 1, chunk.NE, chunk);
 			
 			// Check EAST
-			TryToExpandChunk(gridX + 1, gridY, chunk.canGoRight.Value, chunk);
+			TryToExpandChunk(gridX + 1, gridY, chunk.E, chunk);
 			
 			// Check SOUTH-EAST
-			TryToExpandChunk(gridX + 1, gridY - 1, chunk.canGoDownRight.Value, chunk);
+			TryToExpandChunk(gridX + 1, gridY - 1, chunk.SE, chunk);
 			
 			// Check SOUTH
-			TryToExpandChunk(gridX, gridY - 1, chunk.canGoDown.Value, chunk);
+			TryToExpandChunk(gridX, gridY - 1, chunk.S, chunk);
 			
 			// Check SOUTH-WEST
-			TryToExpandChunk(gridX - 1, gridY - 1, chunk.canGoDownLeft.Value, chunk);
+			TryToExpandChunk(gridX - 1, gridY - 1, chunk.SW, chunk);
 			
 			// Check WEST
-			TryToExpandChunk(gridX - 1, gridY, chunk.canGoLeft.Value, chunk);
+			TryToExpandChunk(gridX - 1, gridY, chunk.W, chunk);
 			
 			// Check NORTH-WEST
-			TryToExpandChunk(gridX - 1, gridY + 1, chunk.canGoUpLeft.Value, chunk);
+			TryToExpandChunk(gridX - 1, gridY + 1, chunk.NW, chunk);
 			
 			// Sort list to include all newly added chunks
 			list.Sort();
@@ -743,242 +911,79 @@ public class HPAStar : Algorithm
 	/// <param name="height"> Height of the array </param>
 	void CalculateChunksPassages(Chunk[,] grid, int width, int height)
 	{
-		// Iterate through enery chunk
+		// Ietarte through all chunks
 		for (int x = 0; x < width; x++)
 		{
 			for (int y = 0; y < height; y++)
 			{
-				// Calculate map positions of the bottom-left node inside the chunk
+				// Precalculate map values
 				int mapX = x * ChunkSize;
 				int mapY = y * ChunkSize;
 				
-				// Check SOUTH PASSAGE
-				if (grid[x, y].canGoDown.HasValue == false)
+				// Check if can go NE
+				if (x + 1 < width && y + 1 < height)
 				{
-					// Initialize value
-					grid[x, y].canGoDown = false;
-					
-					// Check if there is chunk below
-					if (y != 0)
+					// Check if there is passage between chunks
+					if (Map.map[mapY + ChunkSize - 1, mapX + ChunkSize - 1] == FREE &&
+						Map.map[mapY + ChunkSize - 1, mapX + ChunkSize] == FREE &&
+						Map.map[mapY + ChunkSize, mapX + ChunkSize - 1] == FREE &&
+						Map.map[mapY + ChunkSize, mapX + ChunkSize] == FREE)
 					{
-						// Initialize value of the bottom-neightbour chunk
-						grid[x, y - 1].canGoUp = false;
-						
-						// Iterate through every node in bottom row of the chunk and check if it can connect...
-						// ...to the node in the top row in the bottom neighbour
-						for (int xx = 0; xx < ChunkSize; xx++)
+						// Passage exists
+						grid[x, y].NE = true;
+						grid[x + 1, y + 1].SW = true;
+					}
+				}
+				
+				// Check if can go E
+				if (x + 1 < width)
+				{
+					for (int yy = 0; yy < ChunkSize; yy++)
+					{
+						// Check if we didn't go out of map
+						if (mapY + yy >= Map.height)
+							break;
+							
+						// Check if there is passage
+						if (Map.map[mapY + yy, mapX + ChunkSize - 1] == FREE &&
+							Map.map[mapY + yy, mapX + ChunkSize] == FREE)
 						{
-							// Check if we didn't go out of map
-							if (mapX + xx >= Map.width)
-								break;
-								
-							// Check if there is connection
-							if (Map.map[mapY, mapX + xx] == FREE &&
-								Map.map[mapY - 1, mapX + xx] == FREE)
-							{
-								// Update flags and stop loop (passage exists, no need to check further)
-								grid[x, y].canGoDown = true;
-								grid[x, y - 1].canGoUp = true;
-								break;
-							}
+							grid[x, y].E = true;
+							grid[x + 1, y].W = true;
+							break;
 						}
 					}
 				}
 				
-				// Check NORTH PASSAGE
-				if (grid[x, y].canGoUp.HasValue == false)
+				// Check if can no SE
+				if (x + 1 < width && y - 1 >= 0)
 				{
-					// Initialize value
-					grid[x, y].canGoUp = false;
-					
-					// Check if there is chunk above
-					if (y < height - 1)
+					// Check if there is passage between chunks
+					if (Map.map[mapY, mapX + ChunkSize - 1] == FREE &&
+						Map.map[mapY - 1, mapX + ChunkSize - 1] == FREE &&
+						Map.map[mapY, mapX + ChunkSize] == FREE &&
+						Map.map[mapY - 1, mapX + ChunkSize] == FREE)
 					{
-						// Initialize value of the top-neightbour chunk
-						grid[x, y + 1].canGoDown = false;
-						
-						// Iterate through every node in top row of the chunk and check if it can connect...
-						// ...to the node in the bottom row in the top neighbour
-						for (int xx = 0; xx < ChunkSize; xx++)
-						{
-							// Check if we didn't go out of map
-							if (mapX + xx >= Map.width)
-								break;
-
-							// Check if there is connection
-							if (Map.map[mapY + ChunkSize - 1, mapX + xx] == FREE &&
-								Map.map[mapY + ChunkSize, mapX + xx] == FREE)
-							{
-								// Update flags and stop loop (passage exists, no need to check further)
-								grid[x, y].canGoUp = true;
-								grid[x, y + 1].canGoDown = true;
-								break;
-							}
-						}
+						grid[x, y].SE = true;
+						grid[x + 1, y - 1].NW = true;
 					}
 				}
 				
-				// Check EAST PASSAGE
-				if (grid[x, y].canGoRight.HasValue == false)
+				// Check if can go S
+				if (y - 1 >= 0)
 				{
-					// Initialize value
-					grid[x, y].canGoRight = false;
-					
-					// Check if there is chunk on the right
-					if (x < width - 1)
+					for (int xx = 0; xx < ChunkSize; xx++)
 					{
-						// Initialize value of the right-neighbour chunk
-						grid[x + 1, y].canGoLeft = false;
-						
-						// Iterate through every node in right column of the chunk and check if it can connect...
-						// ...to the node in the left column in the right neighbour
-						for (int yy = 0; yy < ChunkSize; yy++)
+						// Check if we didn't get out of map
+						if (mapX + xx >= Map.width)
+							break;
+							
+						// Check if there is passage
+						if (Map.map[mapY, mapX + xx] == FREE &&
+							Map.map[mapY - 1, mapX + xx] == FREE)
 						{
-							// Check if we didn't go out of map
-							if (mapY + yy >= Map.height)
-								break;
-								
-							// Check if there is connection
-							if (Map.map[mapY + yy, mapX + ChunkSize - 1] == FREE &&
-								Map.map[mapY + yy, mapX + ChunkSize] == FREE)
-							{
-								// Update flags and stop loop (passage exists, no need to check further)
-								grid[x, y].canGoRight = true;
-								grid[x + 1, y].canGoLeft = true;
-								break;
-							}
-						}
-					}
-				}
-				
-				// Check WEST PASSAGE
-				if (grid[x, y].canGoLeft.HasValue == false)
-				{
-					// Initialize value
-					grid[x, y].canGoLeft = false;
-					
-					// Check if there is chunk on the left
-					if (x != 0)
-					{
-						// Initialize value of the left-neighbour chunk
-						grid[x - 1, y].canGoRight = false;
-						
-						// Iterate through every node in left column of the chunk and check if it can connect...
-						// ...to the node in the right column in the left neighbour
-						for (int yy = 0; yy < ChunkSize; yy++)
-						{
-							// Check if we didn't go out of map
-							if (mapY + yy >= Map.height)
-								break;
-								
-							// Check if there is connection
-							if (Map.map[mapY + yy, mapX] == FREE &&
-								Map.map[mapY + yy, mapX - 1] == FREE)
-							{
-								// Update flags and stop loop (passage exists, no need to check further)
-								grid[x, y].canGoLeft = true;
-								grid[x - 1, y].canGoRight = true;
-								break;
-							}
-						}
-					}
-				}
-				
-				// Check NORTH-EAST PASSAGE
-				if (grid[x, y].canGoUpRight.HasValue == false)
-				{
-					// Initialize value
-					grid[x, y].canGoUpRight = false;
-					
-					// Check if there is chunk in the NE direction
-					if (x != width - 1 && y != height - 1)
-					{
-						// Initialize neighbour's value
-						grid[x + 1, y + 1].canGoDownLeft = false;
-						
-						// Check if corners are free
-						if (Map.map[mapY + ChunkSize - 1, mapX + ChunkSize - 1] == FREE &&
-							Map.map[mapY + ChunkSize - 1, mapX + ChunkSize] == FREE &&
-							Map.map[mapY + ChunkSize, mapX + ChunkSize - 1] == FREE &&
-							Map.map[mapY + ChunkSize, mapX + ChunkSize] == FREE)
-						{
-							// Update values
-							grid[x, y].canGoUpRight = true;
-							grid[x + 1, y + 1].canGoDownLeft = true;
-						}
-					}
-				}
-				
-				// Check SOUTH-EAST
-				if (grid[x, y].canGoDownRight.HasValue == false)
-				{
-					// Initialize value
-					grid[x, y].canGoDownRight = false;
-					
-					// Check if there is chunk in the SE direction
-					if (x != width - 1 && y != 0)
-					{
-						// Initialize neighbour's value
-						grid[x + 1, y - 1].canGoUpLeft = false;
-						
-						// Check if corners are free
-						if (Map.map[mapY, mapX + ChunkSize - 1] == FREE &&
-							Map.map[mapY - 1, mapX + ChunkSize - 1] ==  FREE &&
-							Map.map[mapY, mapX + ChunkSize] ==  FREE &&
-							Map.map[mapY - 1, mapX + ChunkSize] ==  FREE)
-						{
-							// Update values
-							grid[x, y].canGoDownRight = true;
-							grid[x + 1, y - 1].canGoUpLeft = true;
-						}
-					}
-				}
-				
-				// Check SOUTH-WEST
-				if (grid[x, y].canGoDownLeft.HasValue == false)
-				{
-					// Initialize value
-					grid[x, y].canGoDownLeft = false;
-					
-					// Check if there is node in the SW direction
-					if (x != 0 && y != 0)
-					{
-						// Initialize neighbour's value
-						grid[x - 1, y - 1].canGoUpRight = false;
-						
-						// Check if corners are free
-						if (Map.map[mapY, mapX] == FREE &&
-							Map.map[mapY - 1, mapX] == FREE &&
-							Map.map[mapY, mapX - 1] == FREE &&
-							Map.map[mapY - 1, mapX - 1] == FREE)
-						{
-							// Update values
-							grid[x, y].canGoDownLeft = true;
-							grid[x - 1, y - 1].canGoUpRight = true;
-						}
-					}
-				}
-				
-				// Check NORTH-WEST
-				if (grid[x, y].canGoUpLeft.HasValue == false)
-				{
-					// Initialize value
-					grid[x, y].canGoUpLeft = false;
-					
-					// Check if there is node in the NW direction
-					if (x != 0 && y != height - 1)
-					{
-						// Initialize neighbour's value
-						grid[x - 1, y + 1].canGoDownRight = false;
-						
-						// Check if corners are free
-						if (Map.map[mapY + ChunkSize - 1, mapX] == FREE &&
-							Map.map[mapY + ChunkSize - 1, mapX - 1] == FREE &&
-							Map.map[mapY + ChunkSize, mapX] == FREE &&
-							Map.map[mapY + ChunkSize, mapX - 1] == FREE)
-						{
-							grid[x, y].canGoUpLeft = true;
-							grid[x - 1, y + 1].canGoDownRight = true;
+							grid[x, y].S = true;
+							grid[x, y - 1].N = true;
 						}
 					}
 				}
@@ -994,81 +999,27 @@ public class HPAStar : Algorithm
 	/// <param name="height"> height of the array </param>
 	void PrintChunkMap(Chunk[,] grid, int width, int height)
 	{
-		// Prepare array that will hold data as chars
-		string[,] charArray = new string[width * (ChunkSize + 2), height * (ChunkSize + 2)];
+		// Prepare output array
+		string[,] output = new string[width, height * (ChunkSize + 1)];
 		
-		// Iterate through grid
-		for (int x = 0; x < width; x++)
-		{
-			for (int y = 0; y < height; y++)
+		// Iterate through map
+		for (int row = 0; row < height; row++)
+			for (int col = 0; col < width; col++)
 			{
-				// Get coords in the char array
-				int charX = x * (ChunkSize + 2);
-				int charY = y * (ChunkSize + 2);
-				
-				// Fill char array with information whether or not node is free or not
-				for (int xx = 0; xx < ChunkSize; xx++)
-				{
-					for (int yy = 0; yy < ChunkSize; yy++)
-					{
-						// If we got out of map, stop loop
-						if (x * ChunkSize + xx >= Map.width || y * ChunkSize + yy >= Map.height)
-							break;
-							
-						// Put info into array
-						charArray[charX + xx + 1, charY + yy + 1] = Map.map[y * ChunkSize + yy, x * ChunkSize + xx] == FREE ? "O" : "#"; 
-					}
-				}
-				
-				// Fill array with information about passages
-				if (grid[x, y].canGoUp.Value)
-					for (int xx = 1; xx < ChunkSize + 1; xx++)
-						charArray[charX + xx, charY + ChunkSize + 1] = "^";
-						
-				if (grid[x, y].canGoDown.Value)
-					for (int xx = 1; xx < ChunkSize + 1; xx++)
-						charArray[charX + xx, charY] = "v";
-						
-				if (grid[x, y].canGoLeft.Value)
-					for (int yy = 1; yy < ChunkSize + 1; yy++)
-						charArray[charX, charY + yy] = "<";
-						
-				if (grid[x, y].canGoRight.Value)
-					for (int yy = 1; yy < ChunkSize + 1; yy++)
-						charArray[charX + ChunkSize + 1, charY + yy] = ">";
-						
-				if (grid[x, y].canGoUpRight.Value)
-					charArray[charX + ChunkSize + 1, charY + ChunkSize + 1] = "/";
+				// Get chunk as string array
+				string[] chunk = grid[col, row].ToStringArray();
 
-				if (grid[x, y].canGoUpLeft.Value)
-					charArray[charX, charY + ChunkSize + 1] = "\\";
-
-				if (grid[x, y].canGoDownRight.Value)
-					charArray[charX + ChunkSize + 1, charY] = "\\";
-
-				if (grid[x, y].canGoDownLeft.Value)
-					charArray[charX, charY] = "/";
-			}
-		}
+				// Use this array to fill results
+				for (int i = 0; i < ChunkSize + 1; i++)
+					output[col, (row * (ChunkSize + 1)) + i] = chunk[i];
+			}			
 		
-		// Fill empty places with space char
-		for (int i = 0; i < charArray.GetLength(0); i++)
-			for (int j = 0; j < charArray.GetLength(1); j++)
-				if (charArray[i, j] == null)
-					charArray[i, j] = " ";
-				
-		// Create one big string with data
+		// Convert string array to a single string
 		System.Text.StringBuilder sb = new System.Text.StringBuilder();
-		for (int y = 0; y < charArray.GetLength(1); y++)
+		for (int row = 0; row < height * (ChunkSize + 1); row++)
 		{
-			for (int x = 0; x < charArray.GetLength(0); x++)
-			{
-				if (x % (ChunkSize + 2) == 0)
-					sb.Append("  ");
-				sb.Append(charArray[x, y]);
-			}
-			if (y % (ChunkSize + 2) == 0)
-				sb.Append("\n");
+			for (int col = 0; col < width; col++)
+				sb.Append(output[col, row]);
 			sb.AppendLine();
 		}
 		

@@ -216,4 +216,14 @@ public class StartGoalManager : MonoBehaviour
 		Displayer.Instance.RemoveStartCoords();
 		Displayer.Instance.RemoveGoalCoords();
 	}
+	
+	public static string StartToString()
+	{
+		return "(" + startCol + "x" + startRow + ")";
+	}
+	
+	public static string GoalToString()
+	{
+		return "(" + goalCol + "x" + goalRow + ")";
+	}
 }

@@ -1,0 +1,6 @@
+Algorithm	Path Found	Precalculation Time	Solve Time	Total Time	Path Length	Memory
+A*	True	---	0,21106	0,21106	6,828427	3360
+HPA* (Size 2)	True	0,10047	0,23529	0,33576	6,828427	1538
+HPA* (Size 4)	True	0,06156	0,36033	0,42189	6,828427	718
+HPA* (Size 8)	True	0,0334	0,44002	0,47342	7,414214	287
+JPS+	True	3,18374	0,08255	3,26629	6,828427	40098

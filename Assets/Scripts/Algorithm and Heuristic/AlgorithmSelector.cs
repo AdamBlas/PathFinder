@@ -5,7 +5,7 @@ using UnityEngine;
 public class AlgorithmSelector : MonoBehaviour
 {
 	[Tooltip("Singleton")]
-	static AlgorithmSelector Instance;
+	public static AlgorithmSelector Instance;
 	
 	[Tooltip("Dropdown with all possible algorithms")]
 	public TMPro.TMP_Dropdown algorithmDropdown;
@@ -71,7 +71,7 @@ public class AlgorithmSelector : MonoBehaviour
 		{
 			new AStar(Dijkstra.Instance, Manhattan.Instance),
 			new HPAStar(Dijkstra.Instance, Manhattan.Instance),
-			new JPS(Dijkstra.Instance)
+			new JPS(Dijkstra.Instance, Manhattan.Instance)
 		};
 	}
 	
@@ -112,11 +112,11 @@ public class AlgorithmSelector : MonoBehaviour
 	/// <summary>
 	/// Action invoked when algorithm's dropdown item changes
 	/// </summary>
-	void OnAlgorithmChanged(int index)
+	public void OnAlgorithmChanged(int index)
 	{
 		// Display algorithm's description
 		algorithmDescription.text = algorithms[index].description;
-		
+
 		// Fill heuristics' dropdown with available heuristics
 		PopulateHeuristicsDropdown(algorithms[index]);
 		
@@ -127,7 +127,7 @@ public class AlgorithmSelector : MonoBehaviour
 	/// <summary>
 	/// Action invoked when heuristic's dropdown item changes
 	/// </summary>
-	void OnHeuristicChanged(int index)
+	public void OnHeuristicChanged(int index)
 	{
 		// Display heuristic's description
 		heuristicDescription.text = heuristics[index].description;

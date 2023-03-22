@@ -5,6 +5,9 @@ using UnityEngine.UI;
 
 public class CostOverwriteManager : MonoBehaviour
 {
+	[Tooltip("Singleton")]
+	public static CostOverwriteManager Instance;
+	
 	[Tooltip("Toggle to get value from")]
 	public Toggle toggle;
 	
@@ -25,6 +28,9 @@ public class CostOverwriteManager : MonoBehaviour
 	// Awake is called when the script instance is being loaded.
 	protected void Awake()
 	{
+		// Create Singleton
+		Instance = this;
+		
 		// Subscribe events
 		toggle.onValueChanged.AddListener(UpdateOverwriterStatus);
 		slider.onValueChanged.AddListener(UpdateErrorMargin);
